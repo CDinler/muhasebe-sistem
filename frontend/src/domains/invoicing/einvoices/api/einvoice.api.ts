@@ -18,7 +18,7 @@ const API_BASE_URL = 'http://localhost:8000/api';
 
 class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> {
   constructor() {
-    super('/v2/invoicing/einvoices');
+    super('/api/v2/invoicing/einvoices');
   }
 
   /**
