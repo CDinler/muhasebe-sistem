@@ -342,7 +342,7 @@ const EInvoicesPage: React.FC = () => {
       
       // Import preview verilerini al
       setImportPreviewLoading(true);
-      const previewData = await einvoiceAPI.previewImport(id);
+      const previewData = await einvoiceAPI.previewImport(id, {});
       setImportPreviewData(previewData);
       
       // Düzenlenebilir satırları set et
