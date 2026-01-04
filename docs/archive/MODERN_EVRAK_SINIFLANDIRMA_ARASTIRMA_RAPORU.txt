@@ -1,0 +1,724 @@
+MODERN MUHASEBE EVRAK SINIFLANDIRMA SİSTEMİ ARAŞTIRMASI
+====================================================================================================
+
+
+📊 MEVCUT YAKLAŞIMINIZ:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ YÖN BAZLI SINIFLANDIRMA (Directional Classification)                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  GELEN (Incoming):                    GİDEN (Outgoing):                 │
+│  ├─ Gelen E-Fatura                    ├─ Giden E-Fatura                │
+│  ├─ Gelen E-Arşiv                     ├─ Giden E-Arşiv                 │
+│  ├─ Gelen Para Transferi              ├─ Giden Para Transferi          │
+│  └─ Gelen E-Serbest Meslek Makbuzu    └─ (Giden SMM olabilir)          │
+│                                                                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│ MANTIK:                                                                  │
+│  ✓ Yön (direction) net anlaşılıyor                                      │
+│  ✓ E-Fatura/E-Arşiv ayrımı korunuyor (önemli!)                         │
+│  ✓ Para akışı yönü açık                                                 │
+│                                                                          │
+│ SORUNLAR:                                                                │
+│  ✗ Standart muhasebe terminolojisi ile uyumsuz                         │
+│  ✗ Alış/Satış ayrımı yok → KDV raporlama zorlaşıyor                    │
+│  ✗ Yazılım uyumluluğu düşük (Zirve/Luca)                               │
+│  ✗ "Gelen Para Transferi" → Tahsilat mı, Ödeme mi? Belirsiz           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+💡 TEMEL SORU:
+   "Gelen = Alış" ve "Giden = Satış" mı?
+
+📌 CEVAP: HAYIR, her zaman değil!
+
+   GELEN (Incoming):
+   • Gelen Fatura → Alış (Gider)
+   • Gelen Para → Tahsilat (Gelir)
+   • Gelen Çek → Alacak Tahsili
+   • Gelen İade → Satış İadesi (Gelir azalışı)
+   
+   GİDEN (Outgoing):
+   • Giden Fatura → Satış (Gelir)
+   • Giden Para → Tediye (Gider)
+   • Giden Çek → Borç Ödemesi
+   • Giden İade → Alış İadesi (Gider azalışı)
+
+   ➡️ Yön (direction) tek başına yeterli değil!
+      Evrak türü + Yön + Belge Tipi kombinasyonu gerekli.
+
+
+
+🌍 ULUSLARARASI STANDARTLAR:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ A. SAP S/4HANA (Dünya Lideri)                                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│ HİYERARŞİK SINIFLANDIRMA:                                               │
+│                                                                          │
+│ Seviye 1: İŞLEM TÜRÜ (Transaction Type)                                │
+│   ├─ Purchase (Alım)                                                    │
+│   ├─ Sales (Satış)                                                      │
+│   ├─ Payment (Ödeme)                                                    │
+│   ├─ Receipt (Tahsilat)                                                 │
+│   └─ Journal (Yevmiye)                                                  │
+│                                                                          │
+│ Seviye 2: BELGE TÜRÜ (Document Type)                                   │
+│   ├─ Invoice (Fatura)                                                   │
+│   ├─ Credit Note (İade)                                                 │
+│   ├─ Payment Voucher (Ödeme Fişi)                                      │
+│   └─ Receipt Voucher (Tahsilat Fişi)                                   │
+│                                                                          │
+│ Seviye 3: BELGE ALT TÜRÜ (Document Subtype)                            │
+│   ├─ E-Invoice                                                          │
+│   ├─ E-Archive                                                          │
+│   ├─ Paper Invoice                                                      │
+│   └─ Proforma                                                           │
+│                                                                          │
+│ ÖRNEK: Purchase > Invoice > E-Invoice                                   │
+│        (Alım > Fatura > E-Fatura)                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ B. ORACLE ERP (Enterprise)                                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│ MODÜL BAZLI SINIFLANDIRMA:                                              │
+│                                                                          │
+│ AP (Accounts Payable - Borç Hesapları):                                │
+│   ├─ Standard Invoice                                                   │
+│   ├─ Credit Memo                                                        │
+│   ├─ Debit Memo                                                         │
+│   └─ Prepayment Invoice                                                 │
+│                                                                          │
+│ AR (Accounts Receivable - Alacak Hesapları):                           │
+│   ├─ Invoice                                                            │
+│   ├─ Credit Memo                                                        │
+│   ├─ Debit Memo                                                         │
+│   └─ Receipt                                                            │
+│                                                                          │
+│ CM (Cash Management - Nakit Yönetimi):                                 │
+│   ├─ Bank Receipt                                                       │
+│   ├─ Bank Payment                                                       │
+│   ├─ Cash Receipt                                                       │
+│   └─ Cash Payment                                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ C. TÜRKİYE E-FATURA SİSTEMİ (GİB - Resmi)                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│ E-DÖNÜŞÜM BAZLI SINIFLANDIRMA:                                          │
+│                                                                          │
+│ 1. Fatura Türü:                                                         │
+│    ├─ E-Fatura (Ticari)                                                │
+│    │  ├─ Temel Fatura                                                  │
+│    │  ├─ Ticari Fatura                                                 │
+│    │  └─ İhracat/İthalat                                               │
+│    │                                                                     │
+│    ├─ E-Arşiv Fatura (Nihai Tüketici)                                 │
+│    │  ├─ İnternet Satış                                                │
+│    │  ├─ Perakende Satış                                               │
+│    │  └─ Kamu İdare/Kurum                                              │
+│    │                                                                     │
+│    └─ E-SMM (Serbest Meslek Makbuzu)                                   │
+│                                                                          │
+│ 2. Senaryo:                                                             │
+│    ├─ Temel                                                             │
+│    ├─ Ticari                                                            │
+│    └─ Kamu (TCMB)                                                       │
+│                                                                          │
+│ 3. Yön:                                                                 │
+│    ├─ Gönderilen (Outgoing)                                            │
+│    └─ Gelen (Incoming)                                                  │
+│                                                                          │
+│ ÖNEMLİ: GİB, fatura türünü (E-Fatura/E-Arşiv) önceliklendirir!        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ D. LOGO TİGER (Türkiye'de En Yaygın)                                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│ HİBRİT SINIFLANDIRMA:                                                   │
+│                                                                          │
+│ İşlem + Belge + E-Dönüşüm                                               │
+│                                                                          │
+│ Alış İşlemleri:                                                         │
+│   ├─ Alış Faturası                                                      │
+│   │  ├─ E-Fatura                                                       │
+│   │  ├─ E-Arşiv                                                        │
+│   │  └─ Kağıt Fatura                                                   │
+│   ├─ Alış İade Faturası                                                │
+│   └─ Alış Fiyat Farkı Faturası                                         │
+│                                                                          │
+│ Satış İşlemleri:                                                        │
+│   ├─ Satış Faturası                                                     │
+│   │  ├─ E-Fatura                                                       │
+│   │  ├─ E-Arşiv                                                        │
+│   │  └─ Kağıt Fatura                                                   │
+│   ├─ Satış İade Faturası                                               │
+│   └─ Satış Fiyat Farkı Faturası                                        │
+│                                                                          │
+│ 💡 LOGO YAKLAŞIMI: İşlem türü ana kategori, belge tipi alt kategori    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+
+📚 MUHASEBE BİLGİ SİSTEMLERİ LİTERATÜRÜ:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ SINIFLANDIRMA PRENSİPLERİ (Classification Principles)                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│ 1. CLARITY (Açıklık):                                                  │
+│    • Her evrak türü tek bir işlemi temsil etmeli                       │
+│    • Belirsizlik olmamalı                                               │
+│    • Kullanıcı anında anlayabilmeli                                     │
+│                                                                          │
+│ 2. CONSISTENCY (Tutarlılık):                                           │
+│    • Aynı terminoloji kullanılmalı                                      │
+│    • Standartlara uyumlu olmalı                                         │
+│    • Sektör normlarına uygun olmalı                                     │
+│                                                                          │
+│ 3. COMPLETENESS (Tamlık):                                              │
+│    • Tüm işlem türleri kapsanmalı                                       │
+│    • Eksik kategori olmamalı                                            │
+│    • İstisna durumlar için yol olmalı                                   │
+│                                                                          │
+│ 4. GRANULARITY (Ayrıntı Seviyesi):                                     │
+│    • Çok genel olmamalı (Para Transferi ❌)                            │
+│    • Çok detay olmamalı (Banka X Şubesi Y ❌)                          │
+│    • Dengeli olmalı (Banka Tahsilat Fişi ✓)                           │
+│                                                                          │
+│ 5. HIERARCHY (Hiyerarşi):                                               │
+│    • Ana kategori > Alt kategori yapısı                                │
+│    • 2-3 seviye ideal                                                   │
+│    • Raporlamada kolaylık sağlamalı                                     │
+│                                                                          │
+│ 6. EXTENSIBILITY (Genişletilebilirlik):                                │
+│    • Yeni evrak türleri eklenebilmeli                                   │
+│    • Mevcut yapı bozulmamalı                                            │
+│    • İleride değişiklik kolaylığı                                       │
+│                                                                          │
+│ 7. COMPLIANCE (Uyumluluk):                                              │
+│    • Vergi kanunlarına uygun                                            │
+│    • VUK standartlarına uygun                                           │
+│    • E-dönüşüm gerekliliklerine uygun                                   │
+│                                                                          │
+│ 8. REPORTABILITY (Raporlanabilirlik):                                  │
+│    • KDV raporları kolay çıkmalı                                        │
+│    • Gelir-gider analizi basit olmalı                                   │
+│    • Nakit akış takibi net olmalı                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ULUSLARARASI MUHASEBE STANDARTLARI (IFRS/IAS)                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│ IAS 1 - Financial Statement Presentation:                              │
+│   • İşlem türüne göre sınıflandırma (by nature)                        │
+│   • Fonksiyona göre sınıflandırma (by function)                        │
+│                                                                          │
+│ Tavsiye: İşlem türüne göre (by nature) daha detaylı ve denetlenebilir │
+│                                                                          │
+│ SINIFLANDIRMA ÖRNEĞİ:                                                  │
+│   ├─ Revenue (Hasılat)                                                 │
+│   │  ├─ Sales of Goods                                                 │
+│   │  └─ Services Rendered                                              │
+│   ├─ Cost of Sales (Satışların Maliyeti)                              │
+│   ├─ Operating Expenses (Faaliyet Giderleri)                          │
+│   └─ Finance Costs (Finansman Giderleri)                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+
+
+🎯 ÖNERİLEN MODERN HİBRİT MODEL
+═══════════════════════════════════════════════════════════════════════════
+
+TASARIM PRENSİPLERİ:
+✓ E-Fatura/E-Arşiv ayrımınızı koruyalım (önemli!)
+✓ Standart muhasebe terminolojisi kullanalım (yazılım uyumluluğu)
+✓ KDV raporlama kolaylığı sağlayalım
+✓ Mevcut kayıtlarınızı minimum değişiklikle dönüştürelim
+✓ Gelecek için genişletilebilir olsun
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ÇÖZÜM: 3 SÜTUNLU HİYERARŞİK YAPI                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│ SÜTUN 1: EVRAK TÜRÜ (Ana Kategori - Standart)                          │
+│ SÜTUN 2: EVRAK ALT TÜRÜ (Belge Tipi - E-Dönüşüm)                      │
+│ SÜTUN 3: YÖN/DURUM (İsteğe Bağlı - Detay)                              │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+ÖRNEK UYGULAMA:
+
+┌─────────────────────┬────────────────────┬──────────────────────────────┐
+│ EVRAK TÜRÜ         │ EVRAK ALT TÜRÜ     │ AÇIKLAMA                     │
+├─────────────────────┼────────────────────┼──────────────────────────────┤
+│ ALIŞ FATURASI      │ E-Fatura          │ Ticari alış, GİB entegre     │
+│ ALIŞ FATURASI      │ E-Arşiv           │ Nihai satıcıdan alış         │
+│ ALIŞ FATURASI      │ Kağıt/Matbu       │ Geleneksel fatura            │
+│ ALIŞ FATURASI      │ İthalat           │ Yurtdışı alım                │
+├─────────────────────┼────────────────────┼──────────────────────────────┤
+│ SATIŞ FATURASI     │ E-Fatura          │ Ticari satış, GİB entegre    │
+│ SATIŞ FATURASI     │ E-Arşiv           │ Nihai tüketiciye satış       │
+│ SATIŞ FATURASI     │ Kağıt/Matbu       │ Geleneksel fatura            │
+│ SATIŞ FATURASI     │ İhracat           │ Yurtdışı satış               │
+├─────────────────────┼────────────────────┼──────────────────────────────┤
+│ İADE FATURASI      │ Alış İade         │ Alınan mal iadesi            │
+│ İADE FATURASI      │ Satış İade        │ Satılan mal iadesi           │
+├─────────────────────┼────────────────────┼──────────────────────────────┤
+│ HAKEDİŞ FATURASI   │ E-Fatura          │ İnşaat hakediş               │
+│ HAKEDİŞ FATURASI   │ E-Arşiv           │ İnşaat hakediş (nihai)       │
+└─────────────────────┴────────────────────┴──────────────────────────────┘
+
+AVANTAJLARI:
+═══════════════
+
+1. ✅ KDV RAPORLAMA KOLAYI:
+   • "ALIŞ FATURASI" filtreleme → Tüm indirilecek KDV
+   • "SATIŞ FATURASI" filtreleme → Tüm hesaplanan KDV
+   • Alt tür ile detay analiz
+
+2. ✅ E-DÖNÜŞÜM BİLGİSİ KORUNUYOR:
+   • E-Fatura/E-Arşiv ayrımı alt türde
+   • GİB raporları için hazır
+
+3. ✅ STANDART YAZILIM UYUMLU:
+   • Zirve: "Alış Faturası", "Satış Faturası" kullanıyor ✓
+   • Luca: "Alış Faturası", "Satış Faturası" kullanıyor ✓
+   • Logo: "Alış Faturası", "Satış Faturası" kullanıyor ✓
+
+4. ✅ RAPORLAMA ESNEKLIĞI:
+   • Ana türe göre özet rapor
+   • Alt türe göre detay rapor
+   • Çapraz analiz kolaylığı
+
+5. ✅ MEVCUTTEKİ KAYITLAR KOLAY DÖNÜŞTÜRÜLEBİLİR:
+   
+   Basit formül ile:
+   ─────────────────
+   GELEN E-FATURA     →  ALIŞ FATURASI  +  E-Fatura
+   GELEN E-ARŞİV      →  ALIŞ FATURASI  +  E-Arşiv
+   GİDEN E-FATURA     →  SATIŞ FATURASI +  E-Fatura
+   GİDEN E-ARŞİV      →  SATIŞ FATURASI +  E-Arşiv
+   MATBU FATURA       →  ALIŞ FATURASI  +  Kağıt/Matbu
+   
+   (Tek Excel formülü ile tüm kayıtlar dönüştürülebilir!)
+
+6. ✅ GELECEĞİ HAZIR:
+   • E-İrsaliye eklenirse: "İRSALİYE" + "E-İrsaliye"
+   • E-Serbest Meslek: "SERBEST MESLEK MAKBUZU" + "E-SMM"
+   • E-Müstahsil: "MÜSTAHSİL MAKBUZU" + "E-Müstahsil"
+
+
+
+📋 KAPSAMLI EVRAK TÜRÜ LİSTESİ (3 Sütunlu Sistem)
+═══════════════════════════════════════════════════════════════════════════
+
+🔷 A. FATURALAR (Invoices)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: ALIŞ FATURASI
+├─ Alt Tür: E-Fatura         → Ticari alış (işletmeden)
+├─ Alt Tür: E-Arşiv          → Nihai satıcıdan alış
+├─ Alt Tür: Kağıt/Matbu      → Geleneksel fatura
+└─ Alt Tür: İthalat          → Yurtdışı alım
+
+Ana Evrak Türü: SATIŞ FATURASI
+├─ Alt Tür: E-Fatura         → Ticari satış (işletmeye)
+├─ Alt Tür: E-Arşiv          → Nihai tüketiciye satış
+├─ Alt Tür: Kağıt/Matbu      → Geleneksel fatura
+└─ Alt Tür: İhracat          → Yurtdışı satış
+
+Ana Evrak Türü: İADE FATURASI
+├─ Alt Tür: Alış İade        → Aldığınız malı iade
+└─ Alt Tür: Satış İade       → Sattığınız mal iade edildi
+
+Ana Evrak Türü: HAKEDİŞ FATURASI (İnşaat/Müteahhitlik)
+├─ Alt Tür: E-Fatura         → Ticari hakediş
+└─ Alt Tür: E-Arşiv          → Nihai müşteri hakediş
+
+Ana Evrak Türü: PROFORMA FATURA
+└─ Alt Tür: -                → Ön fatura
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 B. NAKİT/BANKA İŞLEMLERİ (Cash/Bank Transactions)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: KASA TAHSİLAT FİŞİ
+├─ Alt Tür: Nakit            → Nakit tahsilat
+├─ Alt Tür: Çek              → Çek ile tahsilat
+└─ Alt Tür: Senet            → Senet ile tahsilat
+
+Ana Evrak Türü: KASA TEDİYE FİŞİ
+├─ Alt Tür: Nakit            → Nakit ödeme
+├─ Alt Tür: Çek              → Çek ile ödeme
+└─ Alt Tür: Senet            → Senet ile ödeme
+
+Ana Evrak Türü: BANKA TAHSİLAT FİŞİ
+├─ Alt Tür: EFT/Havale       → Banka transferi geliri
+├─ Alt Tür: POS              → Kredi kartı tahsilat
+├─ Alt Tür: Çek              → Çek tahsili
+└─ Alt Tür: Senet            → Senet tahsili
+
+Ana Evrak Türü: BANKA TEDİYE FİŞİ
+├─ Alt Tür: EFT/Havale       → Banka transferi gideri
+├─ Alt Tür: Kredi Kartı      → Kredi kartı ödemesi
+├─ Alt Tür: Çek              → Çek ödemesi
+└─ Alt Tür: Senet            → Senet ödemesi
+
+Ana Evrak Türü: DEKONT
+├─ Alt Tür: Banka Dekontu    → Banka işlem belgesi
+├─ Alt Tür: POS Dekontu      → Kredi kartı dekontu
+└─ Alt Tür: ATM Dekontu      → ATM işlem belgesi
+
+Ana Evrak Türü: VİRMAN FİŞİ
+├─ Alt Tür: Kasa-Kasa        → Kasalar arası
+├─ Alt Tür: Banka-Banka      → Bankalar arası
+└─ Alt Tür: Kasa-Banka       → Kasa-Banka arası
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 C. KIYMETLI EVRAK (Negotiable Instruments)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: ALINAN ÇEK
+├─ Alt Tür: Müşteri Çeki     → Tahsilat amaçlı
+├─ Alt Tür: Ciro Çeki        → Ciro edilmiş
+└─ Alt Tür: Teminat Çeki     → Teminat amaçlı
+
+Ana Evrak Türü: VERİLEN ÇEK
+├─ Alt Tür: Tedarikçi Çeki   → Ödeme amaçlı
+└─ Alt Tür: Teminat Çeki     → Teminat amaçlı
+
+Ana Evrak Türü: ÇEK TAHSİLAT/ÖDEME
+├─ Alt Tür: Tahsil           → Çek tahsil edildi
+├─ Alt Tür: Ödeme            → Çek ödendi
+├─ Alt Tür: İade             → Çek iade edildi
+└─ Alt Tür: Protestosu       → Karşılıksız çek
+
+Ana Evrak Türü: ALINAN SENET
+└─ Alt Tür: Müşteri Senedi   → Tahsilat amaçlı
+
+Ana Evrak Türü: VERİLEN SENET
+└─ Alt Tür: Tedarikçi Senedi → Ödeme amaçlı
+
+Ana Evrak Türü: SENET TAHSİLAT/ÖDEME
+├─ Alt Tür: Tahsil           → Senet tahsil edildi
+├─ Alt Tür: Ödeme            → Senet ödendi
+└─ Alt Tür: Protestosu       → Ödenmedi
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 D. PERSONEL İŞLEMLERİ (Payroll)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: MAAŞ BORDROSU
+├─ Alt Tür: Aylık Maaş       → Normal maaş
+├─ Alt Tür: Prim             → Prim ödemesi
+├─ Alt Tür: İkramiye         → İkramiye/Bonus
+├─ Alt Tür: AGİ              → Asgari geçim indirimi
+└─ Alt Tür: Kıdem/İhbar      → Kıdem tazminatı
+
+Ana Evrak Türü: SGK BİLDİRGESİ
+├─ Alt Tür: Aylık Bildirge   → SGK prim bildirimi
+└─ Alt Tür: İşe Giriş/Çıkış  → İşe giriş/çıkış bildirimi
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 E. GİDER BELGELERİ (Expense Documents)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: GİDER PUSULASI
+└─ Alt Tür: -                → Belgesiz giderler
+
+Ana Evrak Türü: SERBEST MESLEK MAKBUZU
+├─ Alt Tür: E-SMM            → Elektronik SMM
+└─ Alt Tür: Kağıt SMM        → Kağıt SMM
+
+Ana Evrak Türü: MÜSTAHSİL MAKBUZU
+├─ Alt Tür: E-Müstahsil      → Elektronik müstahsil
+└─ Alt Tür: Kağıt Müstahsil  → Kağıt müstahsil
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 F. VERGİ İŞLEMLERİ (Tax Operations)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: VERGİ BEYANNAMESİ
+├─ Alt Tür: KDV              → KDV beyannamesi
+├─ Alt Tür: Muhtasar         → Muhtasar beyanname
+├─ Alt Tür: Geçici Vergi     → Geçici vergi
+├─ Alt Tür: Yıllık Gelir     → Yıllık gelir vergisi
+└─ Alt Tür: Stopaj           → Stopaj beyannamesi
+
+Ana Evrak Türü: VERGİ ÖDEME
+├─ Alt Tür: KDV              → KDV ödemesi
+├─ Alt Tür: Stopaj           → Stopaj ödemesi
+├─ Alt Tür: Gelir Vergisi    → Gelir vergisi ödemesi
+└─ Alt Tür: Damga Vergisi    → Damga vergisi
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 G. MUHASEBE FİŞLERİ (Accounting Vouchers)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: MAHSUP FİŞİ
+├─ Alt Tür: Cari Mahsup      → Alacak-Borç mahsubu
+└─ Alt Tür: Çek/Senet Mahsup → Kıymetli evrak mahsubu
+
+Ana Evrak Türü: YEVMİYE FİŞİ (GENEL FİŞ)
+└─ Alt Tür: -                → Manuel muhasebe kaydı
+
+Ana Evrak Türü: AÇILIŞ FİŞİ
+├─ Alt Tür: Dönem Açılış     → Yıl/Dönem açılışı
+└─ Alt Tür: İşletme Açılış   → Yeni işletme açılışı
+
+Ana Evrak Türü: KAPANIŞ FİŞİ
+└─ Alt Tür: Dönem Kapanış    → Yıl/Dönem kapanışı
+
+Ana Evrak Türü: DÜZELTİCİ FİŞ
+└─ Alt Tür: -                → Hata düzeltme
+
+Ana Evrak Türü: TERS KAYIT
+└─ Alt Tür: -                → İptal kaydı
+
+─────────────────────────────────────────────────────────────────────────
+
+🔷 H. STOK İŞLEMLERİ (Inventory - İsteğe Bağlı)
+───────────────────────────────────────────────────────────────────────────
+
+Ana Evrak Türü: STOK GİRİŞ FİŞİ
+├─ Alt Tür: Alış             → Satın alım girişi
+├─ Alt Tür: İade             → Satış iadesi girişi
+└─ Alt Tür: Fire             → Fire girişi
+
+Ana Evrak Türü: STOK ÇIKIŞ FİŞİ
+├─ Alt Tür: Satış            → Satış çıkışı
+├─ Alt Tür: İade             → Alış iadesi çıkışı
+└─ Alt Tür: Fire             → Fire çıkışı
+
+Ana Evrak Türü: SAYIM FİŞİ
+└─ Alt Tür: -                → Stok sayımı
+
+Ana Evrak Türü: AMORTİSMAN FİŞİ
+└─ Alt Tür: -                → Amortisman ayrılması
+
+─────────────────────────────────────────────────────────────────────────
+
+📊 TOPLAM: 28 Ana Evrak Türü + Çoklu Alt Türler
+
+
+
+🔄 MEVCUTTEKİ 139,868 KAYDININ DÖNÜŞÜMÜ
+═══════════════════════════════════════════════════════════════════════════
+
+AŞAMA 1: YENİ SÜTUNLAR EKLE
+────────────────────────────
+Excel'de mevcut "EVRAK TÜRÜ" sütununun yanına:
+  • "EVRAK TÜRÜ (YENİ)" - Ana kategori
+  • "EVRAK ALT TÜRÜ" - E-Fatura/E-Arşiv/vb.
+
+AŞAMA 2: OTOMATİK DÖNÜŞÜM FORMÜLLERİ
+─────────────────────────────────────
+
+Excel IF formülü ile otomatik dönüştürme:
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ESKİ EVRAK TÜRÜ          →  YENİ EVRAK TÜRÜ      +  ALT TÜR          │
+├──────────────────────────────────────────────────────────────────────┤
+│ GELEN E-FATURA           →  ALIŞ FATURASI        +  E-Fatura         │
+│ GELEN E-ARŞİV            →  ALIŞ FATURASI        +  E-Arşiv          │
+│ GİDEN E-FATURA           →  SATIŞ FATURASI       +  E-Fatura         │
+│ GİDEN E-ARŞİV            →  SATIŞ FATURASI       +  E-Arşiv          │
+│ MATBU FATURA             →  ALIŞ FATURASI*       +  Kağıt/Matbu      │
+│ HAKEDİŞ                  →  HAKEDİŞ FATURASI     +  E-Fatura         │
+│ GELEN PARA TRANSFERİ     →  BANKA TAHSİLAT FİŞİ  +  EFT/Havale       │
+│ GİDEN PARA TRANSFERİ     →  BANKA TEDİYE FİŞİ    +  EFT/Havale       │
+│ KASA DEFTERİ             →  KASA TAHSİLAT FİŞİ*  +  Nakit            │
+│ KASA FİŞİ                →  KASA TAHSİLAT FİŞİ*  +  Nakit            │
+│ KREDİ KARTI EKSTRESİ     →  BANKA TAHSİLAT FİŞİ* +  POS              │
+│ BORDRO                   →  MAAŞ BORDROSU        +  Aylık Maaş       │
+│ YEVMİYE KAYDI            →  YEVMİYE FİŞİ         +  -                │
+│ ÇEK                      →  ALINAN ÇEK*          +  Müşteri Çeki     │
+│ DEKONT                   →  DEKONT               +  Banka Dekontu    │
+│ GELEN E-SERBEST MESLEK   →  SERBEST MESLEK MAKB. +  E-SMM            │
+│ FATURA KESİNTİSİ         →  İADE FATURASI*       +  Alış İade        │
+└──────────────────────────────────────────────────────────────────────┘
+
+* Manuel kontrol gerekli (Borç/Alacak sütununa göre)
+
+AŞAMA 3: MANUEL KONTROLLER
+───────────────────────────
+
+Aşağıdaki kayıtlar için BORÇ/ALACAK sütununa bakarak karar verin:
+
+1. MATBU FATURA:
+   • Borç varsa → ALIŞ FATURASI
+   • Alacak varsa → SATIŞ FATURASI
+
+2. KASA DEFTERİ / KASA FİŞİ:
+   • GİREN varsa → KASA TAHSİLAT FİŞİ
+   • ÇIKAN varsa → KASA TEDİYE FİŞİ
+
+3. KREDİ KARTI EKSTRESİ:
+   • GİREN (Alacak) varsa → BANKA TAHSİLAT FİŞİ (POS)
+   • ÇIKAN (Borç) varsa → BANKA TEDİYE FİŞİ (Kredi Kartı)
+
+4. ÇEK:
+   • GİREN varsa → ALINAN ÇEK
+   • ÇIKAN varsa → VERİLEN ÇEK
+
+ÖRNEK EXCEL FORMÜLÜ:
+────────────────────
+
+Yeni Evrak Türü için (H sütunu):
+
+=IF(G2="GELEN E-FATURA","ALIŞ FATURASI",
+  IF(G2="GELEN E-ARŞİV","ALIŞ FATURASI",
+    IF(G2="GİDEN E-FATURA","SATIŞ FATURASI",
+      IF(G2="GİDEN E-ARŞİV","SATIŞ FATURASI",
+        IF(G2="BORDRO","MAAŞ BORDROSU",
+          IF(G2="HAKEDİŞ","HAKEDİŞ FATURASI",
+            IF(G2="GELEN PARA TRANSFERİ","BANKA TAHSİLAT FİŞİ",
+              IF(G2="GİDEN PARA TRANSFERİ","BANKA TEDİYE FİŞİ",
+                IF(G2="YEVMİYE KAYDI","YEVMİYE FİŞİ",
+                  IF(G2="GELEN E-SERBEST MESLEK MAKBUZU","SERBEST MESLEK MAKBUZU",
+                    G2))))))))))
+
+Evrak Alt Türü için (I sütunu):
+
+=IF(G2="GELEN E-FATURA","E-Fatura",
+  IF(G2="GELEN E-ARŞİV","E-Arşiv",
+    IF(G2="GİDEN E-FATURA","E-Fatura",
+      IF(G2="GİDEN E-ARŞİV","E-Arşiv",
+        IF(G2="MATBU FATURA","Kağıt/Matbu",
+          IF(G2="GELEN PARA TRANSFERİ","EFT/Havale",
+            IF(G2="GİDEN PARA TRANSFERİ","EFT/Havale",
+              IF(G2="BORDRO","Aylık Maaş",
+                IF(G2="GELEN E-SERBEST MESLEK MAKBUZU","E-SMM",
+                  "-")))))))))
+
+AŞAMA 4: DOĞRULAMA
+──────────────────
+
+Dönüşüm sonrası kontroller:
+  1. Kayıt sayısı aynı mı? (139,868)
+  2. Boş kayıt oluşmadı mı?
+  3. ALIŞ/SATIŞ toplamları mantıklı mı?
+  4. KDV tutarları eşleşiyor mu?
+
+AŞAMA 5: ESKİ SÜTUNU SİL
+─────────────────────────
+
+Her şey doğru ise:
+  • Eski "EVRAK TÜRÜ" sütununu gizle veya sil
+  • "(YENİ)" ifadesini kaldır
+  • Düzenleme tamamlandı!
+
+SÜRE TAHMİNİ:
+─────────────
+  • Formül yazma: 30 dakika
+  • Otomatik dönüşüm: 5 dakika
+  • Manuel kontroller: 2-3 saat
+  • Doğrulama: 1 saat
+  ───────────────────────────
+  TOPLAM: ~4-5 saat
+
+
+
+✅ SONUÇ VE TAVSİYELER
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 SORUNUNUZA CEVAP:
+
+SORU: "Gelen = Alış, Giden = Satış olmaz mı zaten?"
+
+CEVAP: Hayır, her zaman değil! Çünkü:
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ GELEN ≠ Sadece Alış                                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│ • Gelen Fatura → ALIŞ (gider) ✓                                        │
+│ • Gelen Para → TAHSİLAT (gelir) ✗ (Alış değil!)                       │
+│ • Gelen Çek → ALACAK TAHSİLİ ✗ (Alış değil!)                           │
+│ • Gelen İade Faturası → SATIŞ İADESİ ✗ (Alış değil!)                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ GİDEN ≠ Sadece Satış                                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│ • Giden Fatura → SATIŞ (gelir) ✓                                       │
+│ • Giden Para → TEDİYE (gider) ✗ (Satış değil!)                        │
+│ • Giden Çek → BORÇ ÖDEMESİ ✗ (Satış değil!)                            │
+│ • Giden İade Faturası → ALIŞ İADESİ ✗ (Satış değil!)                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Bu yüzden sadece "Gelen/Giden" yeterli değil!
+
+═══════════════════════════════════════════════════════════════════════════
+
+💡 ÖNERİLEN ÇÖZÜM:
+
+3 SÜTUNLU HİBRİT SİSTEM
+
+┌──────────────────┬─────────────────┬───────────────────────────────────┐
+│ EVRAK TÜRÜ       │ EVRAK ALT TÜRÜ  │ AÇIKLAMA                          │
+│ (Ana Kategori)   │ (Detay)         │                                   │
+├──────────────────┼─────────────────┼───────────────────────────────────┤
+│ ALIŞ FATURASI    │ E-Fatura       │ ← Gelen E-Fatura buraya           │
+│ ALIŞ FATURASI    │ E-Arşiv        │ ← Gelen E-Arşiv buraya            │
+│ SATIŞ FATURASI   │ E-Fatura       │ ← Giden E-Fatura buraya           │
+│ SATIŞ FATURASI   │ E-Arşiv        │ ← Giden E-Arşiv buraya            │
+└──────────────────┴─────────────────┴───────────────────────────────────┘
+
+AVANTAJLAR:
+✅ E-Fatura/E-Arşiv ayrımı KORUNUYOR (önemli bilgi kaybı yok!)
+✅ Standart terminoloji (Zirve/Luca/Logo uyumlu)
+✅ KDV raporlama kolaylığı (Alış/Satış filtresi)
+✅ Mevcut kayıtlar basit formülle dönüştürülüyor
+✅ Gelecek için genişletilebilir
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 KARŞILAŞTIRMA:
+
+┌─────────────────────┬──────────────┬──────────────────────────────────┐
+│ KRİTER              │ MEVCUT       │ ÖNERİLEN                         │
+├─────────────────────┼──────────────┼──────────────────────────────────┤
+│ E-Fatura Takibi     │ ✅ Var       │ ✅ Var (alt türde)               │
+│ Alış/Satış Ayrımı   │ ❌ Yok       │ ✅ Var (ana türde)               │
+│ KDV Raporlama       │ ⚠️ Zor       │ ✅ Kolay                         │
+│ Standart Uyumlu     │ ❌ %30       │ ✅ %95                           │
+│ Nakit Akış Analizi  │ ⚠️ Belirsiz  │ ✅ Net                           │
+│ Dönüşüm Maliyeti    │ -            │ ✅ 4-5 saat                      │
+└─────────────────────┴──────────────┴──────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 SONUÇ:
+
+Mevcut "Gelen/Giden" yaklaşımınız:
+  ✓ E-dönüşüm için mantıklı
+  ✓ Yön bilgisi net
+  ✗ Ancak muhasebe standardı değil
+  ✗ Yazılım uyumsuzluğu var
+  ✗ Raporlama zorluğu var
+
+Önerilen "Ana Tür + Alt Tür" yaklaşımı:
+  ✓ Standart muhasebe terminolojisi
+  ✓ E-dönüşüm bilgisi korunuyor
+  ✓ Yazılım uyumluluğu yüksek
+  ✓ Raporlama kolaylığı
+  ✓ Kolay geçiş (4-5 saat)
+
+═══════════════════════════════════════════════════════════════════════════
+
+💼 TAVSİYE:
+
+"Gelen/Giden" yerine "Alış/Satış" kullanın, ancak E-Fatura/E-Arşiv bilgisini
+alt tür olarak muhafaza edin. Bu modern, standart ve pratik bir çözümdür.
+
+En iyi uygulama: 3 sütunlu hiyerarşik sistem!
+

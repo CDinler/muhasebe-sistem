@@ -1,0 +1,24 @@
+/* EInvoicesPage.compact.css: Tabloyu daha sıkı ve kompakt yapar */
+/* E-Fatura tablosu için kompakt görünüm */
+.ant-table {
+  font-size: 11px !important;
+}
+
+.ant-table-thead > tr > th {
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+}
+
+.ant-btn-sm {
+  font-size: 11px !important;
+}
+
+.ant-tag {
+  font-size: 10px !important;
+  padding: 0 4px !important;
+}

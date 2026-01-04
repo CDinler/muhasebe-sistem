@@ -1,0 +1,10 @@
+fis_no,fis_tarihi,fis_aciklama,masraf_merkezi_id,belge_tipi,belge_alt_tipi,belge_no,iliskili_fatura_no,hesap_kodu,cari_kodu,satir_aciklama,borc,alacak,miktar,birim,kdv_orani,stopaj_orani,kdv_matrahi
+F00000001,2025-01-15,Ocak Ayı Maaş Ödemeleri,,,,,335.12345678901,,Ocak 2025 Maaş Ödemesi,25000.00,0.00,,,,,,
+F00000001,2025-01-15,Ocak Ayı Maaş Ödemeleri,,,,,102.00001,,Ocak 2025 Maaş Ödemesi,0.00,25000.00,,,,,,
+F00000002,2025-01-20,Fatura Tahsil,15,ALIŞ FATURASI,,M012025000000123,,120.00001,320.00123,ABC Firmasından Tahsilat,11800.00,0.00,1,Adet,0.18,,10000.00
+F00000002,2025-01-20,Fatura Tahsil,15,ALIŞ FATURASI,,M012025000000123,,102.00001,,Banka Tahsilat,0.00,11800.00,,,,,,
+F00000003,2025-01-25,Mal Alımı,20,ALIŞ FATURASI,,FA2025-001,,153.00001,320.00456,Ticari Mal Alımı,10000.00,0.00,100,Adet,0.18,,10000.00
+F00000003,2025-01-25,Mal Alımı,20,ALIŞ FATURASI,,FA2025-001,,191.00001,320.00456,İndirilecek KDV,1800.00,0.00,,,0.18,,10000.00
+F00000003,2025-01-25,Mal Alımı,20,ALIŞ FATURASI,,FA2025-001,,320.00456,320.00456,Tedarikçiye Borç,0.00,11800.00,,,,,,
+F00000004,2025-02-01,Personel Avansı,,,,,,,335.22499643278,,Yakup Kadıoğlu Avans,5000.00,0.00,,,,,,
+F00000004,2025-02-01,Personel Avansı,,,,,,,100.00001,,Kasa Ödeme,0.00,5000.00,,,,,,
