@@ -19,7 +19,7 @@ from app.schemas.einvoice import (
 )
 
 
-router = APIRouter(prefix='/einvoices', tags=['E-Invoice (V2)'])
+router = APIRouter(tags=['E-Invoice (V2)'])
 
 
 @router.get('/summary', response_model=EInvoiceSummary)
