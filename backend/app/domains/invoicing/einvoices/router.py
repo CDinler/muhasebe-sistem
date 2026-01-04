@@ -17,6 +17,8 @@ from app.schemas.einvoice import (
     EInvoiceUpdate,
     EInvoiceSummary
 )
+from app.services.einvoice_accounting_service import generate_transaction_preview
+from app.models.einvoice import EInvoice
 
 
 router = APIRouter(tags=['E-Invoice (V2)'])
@@ -140,3 +142,34 @@ def delete_invoice(
     if not success:
         raise HTTPException(status_code=404, detail='Fatura bulunamadı')
     return None
+
+
+@router.post('/{invoice_id}/preview-import')
+def preview_import(
+    invoice_id: int,
+    category_data: Optional[dict] = None,
+    cost_center_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Import önizleme - Kullanıcıya muhasebe kaydını göster (kayıt oluşturmaz)
+    
+    Args:
+        invoice_id: E-fatura ID
+        category_data: Opsiyonel kategorizasyon verisi
+        cost_center_id: Opsiyonel maliyet merkezi ID
+    
+    Returns:
+        - Cari bilgisi (mevcut/yeni)
+        - Fiş satırları (hesap, borç, alacak)
+        - Uyarılar (eksik hesap vb.)
+    """
+    einvoice = db.query(EInvoice).filter(EInvoice.id == invoice_id).first()
+    if not einvoice:
+        raise HTTPException(status_code=404, detail='E-fatura bulunamadı')
+    
+    if einvoice.processing_status == 'COMPLETED':
+        raise HTTPException(status_code=400, detail='Bu fatura zaten import edilmiş')
+    
+    # Service'den önizleme al
+    return generate_transaction_preview(db, einvoice, category_data, cost_center_id)

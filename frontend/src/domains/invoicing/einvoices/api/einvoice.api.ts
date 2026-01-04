@@ -46,22 +46,24 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
   }
 
   /**
-   * V1 API'ye fallback için (XML upload, PDF matching vb.)
-   * Legacy endpoint'ler henüz V2'ye taşınmadı
+   * V2 API endpoints (migrated from V1)
    */
   async getEInvoice(id: number): Promise<any> {
-    const response = await axios.get(`${API_BASE_URL}/v1/einvoices/${id}`);
+    const response = await this.client.get(`${this.baseURL}/${id}`);
     return response.data;
   }
 
   async previewImport(id: number, data?: any): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/${id}/preview-import`,
+    const response = await this.client.post(
+      `${this.baseURL}/${id}/preview-import`,
       data
     );
     return response.data;
   }
 
+  /**
+   * V1 API fallback (still on V1)
+   */
   async importToAccounting(id: number, data: any): Promise<any> {
     const response = await axios.post(
       `${API_BASE_URL}/v1/einvoices/${id}/import`,
