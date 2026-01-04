@@ -4,7 +4,7 @@ E-Invoice Router (V2 API)
 DDD mimarisine uygun yeni API endpoint'leri.
 Mevcut V1 endpoint'leri backward compatibility için korunur.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -147,8 +147,7 @@ def delete_invoice(
 @router.post('/{invoice_id}/preview-import')
 def preview_import(
     invoice_id: int,
-    category_data: Optional[dict] = None,
-    cost_center_id: Optional[int] = None,
+    request_body: dict = Body(default={}),
     db: Session = Depends(get_db)
 ):
     """
@@ -156,8 +155,10 @@ def preview_import(
     
     Args:
         invoice_id: E-fatura ID
-        category_data: Opsiyonel kategorizasyon verisi
-        cost_center_id: Opsiyonel maliyet merkezi ID
+        request_body: {
+            "invoice_lines_mapping": [...],  # Opsiyonel
+            "cost_center_id": 123             # Opsiyonel
+        }
     
     Returns:
         - Cari bilgisi (mevcut/yeni)
@@ -170,6 +171,10 @@ def preview_import(
     
     if einvoice.processing_status == 'COMPLETED':
         raise HTTPException(status_code=400, detail='Bu fatura zaten import edilmiş')
+    
+    # Request body'den parametreleri çıkar
+    category_data = request_body.get('invoice_lines_mapping') or request_body if request_body else None
+    cost_center_id = request_body.get('cost_center_id')
     
     # Service'den önizleme al
     return generate_transaction_preview(db, einvoice, category_data, cost_center_id)
