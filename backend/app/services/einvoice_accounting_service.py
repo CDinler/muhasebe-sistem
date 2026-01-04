@@ -292,8 +292,8 @@ def create_accounting_transaction(
         einvoice=einvoice
     )
     
-    # Fiş numarası oluştur
-    transaction_number = get_next_transaction_number(db, prefix="F")
+    # Fiş numarası oluştur (commit=False - Ana transaction'da commit edilecek)
+    transaction_number = get_next_transaction_number(db, prefix="F", commit=False)
     period = einvoice.issue_date.strftime('%Y-%m')
     
     # Belge türü ve alt türünü bul
@@ -395,7 +395,8 @@ def create_custom_transaction(
     # Fiş numarası kullanıcı tarafından belirlenmişse onu kullan, yoksa yeni oluştur
     transaction_number = transaction_data.get('transaction_number')
     if not transaction_number:
-        transaction_number = get_next_transaction_number(db, prefix="F")
+        # ÖNEMLI: commit=False - Ana transaction commit edene kadar counter güncellenmemeli
+        transaction_number = get_next_transaction_number(db, prefix="F", commit=False)
     
     # Belge türü ve alt türü - kullanıcı belirtmişse onu kullan
     cost_center_id = transaction_data.get('cost_center_id')
