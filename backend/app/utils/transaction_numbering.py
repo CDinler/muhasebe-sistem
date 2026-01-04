@@ -42,12 +42,19 @@ def get_next_transaction_number(db: Session, prefix: str = "F", commit: bool = T
         db.execute(text("INSERT INTO transaction_counter (id, last_number) VALUES (1, 0)"))
         db.flush()
 
-    # Atomik olarak sayaç artır (iki ayrı query)
-    db.execute(text("UPDATE transaction_counter SET last_number = last_number + 1 WHERE id = 1"))
+    # ATOMIK İŞLEM: Row-level lock ile güvenli sayaç artırma
+    # SELECT FOR UPDATE: Satırı kilitle, başka transaction beklesin
+    result = db.execute(text(
+        "SELECT last_number FROM transaction_counter WHERE id = 1 FOR UPDATE"
+    )).fetchone()
     
-    # Güncel değeri oku
-    result = db.execute(text("SELECT last_number FROM transaction_counter WHERE id = 1")).fetchone()
-    next_num = result[0] if result else 1
+    current_num = result[0] if result else 0
+    next_num = current_num + 1
+    
+    # Kilit altında güncelle
+    db.execute(text(
+        "UPDATE transaction_counter SET last_number = :next_num WHERE id = 1"
+    ), {"next_num": next_num})
     
     if commit:
         db.commit()
