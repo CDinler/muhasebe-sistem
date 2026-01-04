@@ -557,46 +557,29 @@ def import_einvoice_to_accounting(
                     new_account_code = generate_fixed_asset_account(db, 'Taşıt', item_name)
                     line_mapping['generated_account_code'] = new_account_code
         
-        # 3. Muhasebe fişi oluştur
-        if transaction_data and transaction_data.get('lines'):
-            # Kullanıcı düzenlemişse, düzenlenmiş veriyi kullan
-            transaction = create_custom_transaction(db, einvoice, contact, transaction_data)
-        else:
-            # Otomatik oluştur
+        # 3. Muhasebe fişi oluştur (max 3 deneme - duplicate için retry)
+        max_retries = 3
+        last_error = None
+        
+        for attempt in range(max_retries):
             try:
-                transaction = create_accounting_transaction(db, einvoice, contact)
-            except Exception as create_err:
-                # Duplicate transaction_number hatası olabilir
-                if 'Duplicate entry' in str(create_err) or 'duplicate key' in str(create_err).lower():
-                    # Fiş numarasını al ve eski transaction'ı sil
-                    from app.models.transaction import Transaction
-                    from app.models.transaction_line import TransactionLine
-                    from app.utils.transaction_numbering import get_next_transaction_number
-                    
-                    # Bir sonraki fiş numarasını hesapla (duplicate olan numara)
-                    duplicate_number = get_next_transaction_number(db, prefix="F")
-                    
-                    # Eski transaction'ı bul ve sil
-                    old_transaction = db.query(Transaction).filter(
-                        Transaction.transaction_number == duplicate_number
-                    ).first()
-                    
-                    if old_transaction:
-                        # Transaction lines ve mapping'i sil
-                        db.query(TransactionLine).filter(
-                            TransactionLine.transaction_id == old_transaction.id
-                        ).delete()
-                        db.execute(text(
-                            "DELETE FROM invoice_transaction_mappings WHERE transaction_id = :tid"
-                        ), {'tid': old_transaction.id})
-                        db.delete(old_transaction)
-                        db.commit()
-                        
-                        # Tekrar dene
-                        transaction = create_accounting_transaction(db, einvoice, contact)
-                    else:
-                        raise create_err
+                if transaction_data and transaction_data.get('lines'):
+                    # Kullanıcı düzenlemişse, düzenlenmiş veriyi kullan
+                    transaction = create_custom_transaction(db, einvoice, contact, transaction_data)
                 else:
+                    # Otomatik oluştur
+                    transaction = create_accounting_transaction(db, einvoice, contact)
+                break  # Başarılı, döngüden çık
+                
+            except Exception as create_err:
+                last_error = create_err
+                # Duplicate transaction_number hatası mı?
+                if ('Duplicate entry' in str(create_err) or 'duplicate key' in str(create_err).lower()) and attempt < max_retries - 1:
+                    # Rollback yap, tekrar dene (yeni numara alacak)
+                    db.rollback()
+                    continue
+                else:
+                    # Başka hata veya son deneme, fırlat
                     raise create_err
         
         # 4. Junction table'a mapping ekle
