@@ -4,6 +4,7 @@
  * V2 API kullanır (yeni DDD architecture)
  */
 import axios from 'axios';
+import apiClient from '@/shared/api/client';
 import { CRUDService } from '@/shared/api/base.api';
 import type {
   EInvoice,
@@ -49,13 +50,13 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
    * V2 API endpoints (migrated from V1)
    */
   async getEInvoice(id: number): Promise<any> {
-    const response = await this.client.get(`${this.baseURL}/${id}`);
+    const response = await apiClient.get(`${this.endpoint}/${id}`);
     return response.data;
   }
 
   async previewImport(id: number, data?: any): Promise<any> {
-    const response = await this.client.post(
-      `${this.baseURL}/${id}/preview-import`,
+    const response = await apiClient.post(
+      `${this.endpoint}/${id}/preview-import`,
       data
     );
     return response.data;

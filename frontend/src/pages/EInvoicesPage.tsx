@@ -325,6 +325,7 @@ const EInvoicesPage: React.FC = () => {
   };
 
   const handleImport = async (id: number) => {
+    console.log('🚀 handleImport başladı, id:', id);
     try {
       // Faturayı bul ve detay modalını import modunda aç
       const invoice = einvoices.find(inv => inv.id === id);
@@ -333,6 +334,7 @@ const EInvoicesPage: React.FC = () => {
         return;
       }
       
+      console.log('📥 Fatura bulundu, detay çekiliyor...');
       // Detaylı fatura bilgisini al
       const response = await einvoiceAPI.getEInvoice(id);
       console.log('📋 Import için fatura detayı:', response);
@@ -341,8 +343,10 @@ const EInvoicesPage: React.FC = () => {
       setSelectedInvoice(response);
       
       // Import preview verilerini al
+      console.log('🔍 Preview verisi çekiliyor...');
       setImportPreviewLoading(true);
       const previewData = await einvoiceAPI.previewImport(id, {});
+      console.log('✅ Preview verisi alındı:', previewData);
       setImportPreviewData(previewData);
       
       // Düzenlenebilir satırları set et
@@ -374,6 +378,8 @@ const EInvoicesPage: React.FC = () => {
       setDetailModalVisible(true);
       setImportPreviewLoading(false);
     } catch (error: any) {
+      console.error('❌ handleImport hatası:', error);
+      console.error('❌ Error response:', error.response);
       setImportPreviewLoading(false);
       message.error(error.response?.data?.detail || 'Import önizlemesi yüklenemedi');
     }
