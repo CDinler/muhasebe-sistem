@@ -48,8 +48,11 @@ domains/
 │   ├── service.py (business logic)
 │   └── router.py (endpoints)
 │
-└── accounting/    🚧 Devam ediyor
-    └── accounts/  ✅ Hazır
+├── accounting/    🚧 Devam ediyor
+│   └── accounts/  ✅ Hazır
+│
+└── invoicing/     ✅ Yeni eklendi!
+    └── einvoices/ ✅ Hazır (models, repository, service, router)
 ```
 
 ### Frontend
@@ -59,8 +62,11 @@ domains/
 │   ├── api/, hooks/, types/
 │   └── pages/PersonnelPage.tsx
 │
-└── accounting/    🚧 Devam ediyor
-    └── api/, hooks/, types/
+├── accounting/    🚧 Devam ediyor
+│   └── api/, hooks/, types/
+│
+└── invoicing/     ✅ Yeni eklendi!
+    └── einvoices/ ✅ Hazır (api, hooks, types)
 ```
 
 ---

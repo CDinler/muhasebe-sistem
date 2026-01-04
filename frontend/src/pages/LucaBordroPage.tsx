@@ -88,7 +88,6 @@ export default function LucaBordroPage() {
       loadBordro();
     }
   }, [selectedDonem, loadBordro]);
-  }, [selectedDonem]);
 
   const handleUpload = async (file: UploadFile) => {
     if (!uploadDonem) {

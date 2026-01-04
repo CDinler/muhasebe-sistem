@@ -46,9 +46,11 @@ app.include_router(api_router, prefix="/api/v1", tags=["v1"])
 # Domain routers (new architecture)
 from app.domains.personnel.router import router as personnel_router
 from app.domains.accounting.accounts.router import router as accounts_router
+from app.domains.invoicing.einvoices.router import router as einvoices_router
 
 app.include_router(personnel_router, prefix="/api/v2/personnel", tags=["Personnel Domain"])
-app.include_router(accounts_router, prefix="/api/v2/accounts", tags=["Accounts Domain"])
+app.include_router(accounts_router, prefix="/api/v2/accounts", tags=["Accounting Domain"])
+app.include_router(einvoices_router, prefix="/api/v2/invoicing/einvoices", tags=["Invoicing Domain"])
 
 
 if __name__ == "__main__":
