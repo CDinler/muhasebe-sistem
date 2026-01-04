@@ -28,8 +28,8 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     date_from?: string;
     date_to?: string;
   }): Promise<EInvoiceSummary> {
-    const response = await axios.get(
-      `${API_BASE_URL}${this.endpoint}/summary`,
+    const response = await apiClient.get<EInvoiceSummary>(
+      `${this.endpoint}/summary`,
       { params }
     );
     return response.data;
@@ -39,8 +39,8 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
    * Filtrelenmiş liste
    */
   async getFiltered(filters: EInvoiceFilters): Promise<EInvoice[]> {
-    const response = await axios.get(
-      `${API_BASE_URL}${this.endpoint}`,
+    const response = await apiClient.get<EInvoice[]>(
+      this.endpoint,
       { params: filters }
     );
     return response.data;
