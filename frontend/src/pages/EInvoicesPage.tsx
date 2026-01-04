@@ -15,7 +15,6 @@ import {
   Modal,
   Descriptions,
   message,
-  Popconfirm,
   Upload,
   Progress,
   Radio,
@@ -44,12 +43,10 @@ import {
   useUploadPDF,
   usePreviewXML,
   useCreateTransaction,
-  useTransactionPreview,
 } from '@/domains/invoicing/einvoices/hooks/useEInvoices';
 import { einvoiceAPI } from '@/domains/invoicing/einvoices/api/einvoice.api';
 import type {
   EInvoice,
-  EInvoiceSummary,
   EInvoiceFilters,
 } from '@/domains/invoicing/einvoices/types/einvoice.types';
 
@@ -64,7 +61,6 @@ const EInvoicesPage: React.FC = () => {
     const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
     const [costCenterLoading, setCostCenterLoading] = useState(false);
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [accountsLoading, setAccountsLoading] = useState(false);
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [documentSubtypes, setDocumentSubtypes] = useState<DocumentSubtype[]>([]);
     const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState<number | null>(null);
@@ -110,20 +106,18 @@ const EInvoicesPage: React.FC = () => {
   // Hesap planını yükle
   useEffect(() => {
     const fetchAccounts = async () => {
-      setAccountsLoading(true);
       try {
-        const res = await accountService.getAll({ is_active: true });
+        const res = await accountService.getAll({});
         setAccounts(res.data || []);
       } catch (e) {
         message.error('Hesap planı yüklenemedi');
-      } finally {
-        setAccountsLoading(false);
       }
     };
     fetchAccounts();
   }, []);
   
   // ========== LOCAL STATE (UI ONLY) ==========
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<EInvoice | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [isImportMode, setIsImportMode] = useState(false);
@@ -167,7 +161,7 @@ const EInvoicesPage: React.FC = () => {
 
   // ========== REACT QUERY HOOKS ==========
   // 🆕 Summary (özet istatistikler)
-  const { data: summary, isLoading: summaryLoading } = useEInvoiceSummary({
+  const { data: summary } = useEInvoiceSummary({
     date_from: filters.date_from,
     date_to: filters.date_to,
   });
@@ -181,7 +175,6 @@ const EInvoicesPage: React.FC = () => {
   const uploadPDFMutation = useUploadPDF();
   const previewXMLMutation = usePreviewXML();
   const createTransactionMutation = useCreateTransaction();
-  const transactionPreviewMutation = useTransactionPreview();
 
   // Upload modal reset
   useEffect(() => {
@@ -386,39 +379,6 @@ const EInvoicesPage: React.FC = () => {
     }
   };
 
-  // 🆕 Kategorizasyon değiştiğinde preview'ı yenile
-  const refreshPreviewWithCategories = async () => {
-    if (!selectedInvoice?.id) return;
-    
-    try {
-      setImportPreviewLoading(true);
-      
-      // Fatura satırları mapping'i oluştur (TÜM BİLGİLERİ GÖNDER)
-      const invoiceLinesMapping = selectedInvoice?.invoice_lines?.map((line: any, idx: number) => ({
-        line_id: String(idx + 1),  // XML'deki satır sırası
-        category: invoiceLineCategories[line.id],
-        account_code: invoiceLineAccounts[line.id],
-        item_name: line.item_name,  // TEKNOBOND 401 P - 410 ML gibi
-        quantity: line.quantity,
-        unit_price: line.unit_price,
-        line_total: line.line_total,
-      })) || [];
-      
-      // Kategori mapping ile preview al
-      const previewData = await einvoiceAPI.previewImport(selectedInvoice.id, {
-        invoice_lines_mapping: invoiceLinesMapping,
-        cost_center_id: selectedInvoice.cost_center_id
-      });
-      
-      setImportPreviewData(previewData);
-      setEditableLines(previewData.transaction?.lines || []);
-      setImportPreviewLoading(false);
-    } catch (error: any) {
-      setImportPreviewLoading(false);
-      message.error(error.response?.data?.detail || 'Import önizlemesi yüklenemedi');
-    }
-  };
-
   const handleConfirmImport = async () => {
     if (!importPreviewData?.invoice?.id) return;
     
@@ -467,7 +427,7 @@ const EInvoicesPage: React.FC = () => {
 
   const handleFileUpload = async (file: File) => {
     try {
-      setLoading(true);
+      setUploadLoading(true);
       setUploadModalVisible(true);
       setUploadProgress(0);
       setUploadStatus('Dosya yükleniyor...');
@@ -515,7 +475,7 @@ const EInvoicesPage: React.FC = () => {
       setTimeout(() => setUploadModalVisible(false), 3000);
       message.error(error.response?.data?.detail || 'Dosya yüklenemedi');
     } finally {
-      setLoading(false);
+      setUploadLoading(false);
     }
     return false; // Otomatik upload'u engelle
   };
@@ -523,7 +483,7 @@ const EInvoicesPage: React.FC = () => {
   // PDF Upload Handler
   const handlePDFUpload = async (files: File[], direction: 'incoming' | 'outgoing' | 'incoming-archive' | 'outgoing-archive') => {
     try {
-      setLoading(true);
+      setUploadLoading(true);
       setUploadModalVisible(true);
       setUploadProgress(0);
       setUploadStatus(`${files.length} PDF dosyası işleniyor...`);
@@ -683,13 +643,13 @@ const EInvoicesPage: React.FC = () => {
       setTimeout(() => setUploadModalVisible(false), 3000);
       message.error('PDF dosyaları yüklenemedi');
     } finally {
-      setLoading(false);
+      setUploadLoading(false);
     }
   };
 
   const handleXMLUpload = async (fileList: File[], direction: 'incoming' | 'outgoing') => {
     try {
-      setLoading(true);
+      setUploadLoading(true);
       setUploadModalVisible(true);
       setUploadProgress(0);
       setUploadStatus(`${fileList.length} XML dosyası yükleniyor...`);
@@ -742,7 +702,7 @@ const EInvoicesPage: React.FC = () => {
       setTimeout(() => setUploadModalVisible(false), 3000);
       message.error(error.response?.data?.detail || 'XML dosyaları yüklenemedi');
     } finally {
-      setLoading(false);
+      setUploadLoading(false);
     }
   };
 
@@ -1324,8 +1284,8 @@ const EInvoicesPage: React.FC = () => {
           size="small"
           pagination={{
             total: summary?.total_count || 0,
-            current: Math.floor(filters.skip / filters.limit) + 1,
-            pageSize: filters.limit,
+            current: Math.floor((filters.skip || 0) / (filters.limit || 50)) + 1,
+            pageSize: filters.limit || 50,
             showSizeChanger: true,
             showTotal: (total) => `Toplam ${total} fatura`,
             onChange: (page, pageSize) => {

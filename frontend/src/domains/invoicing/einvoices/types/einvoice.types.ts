@@ -65,6 +65,8 @@ export interface EInvoice {
   // Details
   invoice_lines?: any[];
   tax_details?: any[];
+  tax_totals?: any[];
+  allowance_charges?: any[];
   
   // Timestamps
   created_at?: string;
