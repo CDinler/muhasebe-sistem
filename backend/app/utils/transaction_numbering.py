@@ -1,8 +1,8 @@
 """
-Merkezi fiş numarası yönetimi
+Merkezi fiş numarası yönetimi - AYRI SESSION ile
 Tüm fişler sıralı ve kesintisiz olmalı: F00000001, F00000002, ...
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import text, func
 from typing import Optional
 import re
@@ -10,56 +10,64 @@ import re
 
 def get_next_transaction_number(db: Session, prefix: str = "F", commit: bool = True) -> str:
     """
-    Sıradaki fiş numarasını döndür
+    Sıradaki fiş numarasını döndür - AYRI SESSION KULLANIR
     
     Args:
-        db: Database session
+        db: Ana database session (sadece engine almak için)
         prefix: Fiş öneki (F, BORDRO, vb.)
-        commit: True ise commit yapar (normal kullanım), False ise rollback edilebilir (preview)
+        commit: True ise counter'ı hemen commit eder (varsayılan)
     
     Returns:
         str: Sıradaki fiş numarası (örn: F00025001)
     
-    Kurallar:
-    - Format: F + 8 haneli sayı (F00000001, F00000002, ...)
-    - Sıralı ve kesintisiz ilerler
-    - Her dönem/tip için ayrı seri yok, tümü tek seride
+    ÖNEMLI:
+    - Counter için AYRI bir session açar
+    - Ana transaction'dan BAĞIMSIZ commit yapar
+    - Lock süresi çok kısa (~1-2ms)
+    - Ana session hiç etkilenmez
     """
     
-    # transaction_counter tablosundan atomik olarak yeni numara al
-    # Tablo yoksa otomatik oluştur
-    db.execute(text("""
-        CREATE TABLE IF NOT EXISTS transaction_counter (
-            id INT PRIMARY KEY DEFAULT 1,
-            last_number INT NOT NULL
-        )
-    """))
-    db.flush()
+    # Ana session'dan engine al, yeni session oluştur
+    SessionLocal = sessionmaker(bind=db.get_bind())
+    counter_db = SessionLocal()
     
-    # İlk kayıt yoksa ekle
-    check = db.execute(text("SELECT COUNT(*) FROM transaction_counter WHERE id = 1")).scalar()
-    if check == 0:
-        db.execute(text("INSERT INTO transaction_counter (id, last_number) VALUES (1, 0)"))
-        db.flush()
+    try:
+        # transaction_counter tablosundan atomik olarak yeni numara al
+        counter_db.execute(text("""
+            CREATE TABLE IF NOT EXISTS transaction_counter (
+                id INT PRIMARY KEY DEFAULT 1,
+                last_number INT NOT NULL
+            )
+        """))
+        counter_db.flush()
+        
+        # İlk kayıt yoksa ekle
+        check = counter_db.execute(text("SELECT COUNT(*) FROM transaction_counter WHERE id = 1")).scalar()
+        if check == 0:
+            counter_db.execute(text("INSERT INTO transaction_counter (id, last_number) VALUES (1, 0)"))
+            counter_db.flush()
 
-    # ATOMIK İŞLEM: Row-level lock ile güvenli sayaç artırma
-    # SELECT FOR UPDATE: Satırı kilitle, başka transaction beklesin
-    result = db.execute(text(
-        "SELECT last_number FROM transaction_counter WHERE id = 1 FOR UPDATE"
-    )).fetchone()
-    
-    current_num = result[0] if result else 0
-    next_num = current_num + 1
-    
-    # Kilit altında güncelle
-    db.execute(text(
-        "UPDATE transaction_counter SET last_number = :next_num WHERE id = 1"
-    ), {"next_num": next_num})
-    
-    if commit:
-        db.commit()
+        # ATOMIK İŞLEM: Row-level lock ile güvenli sayaç artırma
+        # SELECT FOR UPDATE: Satırı kilitle, başka transaction beklesin
+        result = counter_db.execute(text(
+            "SELECT last_number FROM transaction_counter WHERE id = 1 FOR UPDATE"
+        )).fetchone()
+        
+        current_num = result[0] if result else 0
+        next_num = current_num + 1
+        
+        # Kilit altında güncelle
+        counter_db.execute(text(
+            "UPDATE transaction_counter SET last_number = :next_num WHERE id = 1"
+        ), {"next_num": next_num})
+        
+        if commit:
+            counter_db.commit()  # AYRI SESSION - ana transaction etkilenmez!
 
-    return f"{prefix}{next_num:08d}"
+        return f"{prefix}{next_num:08d}"
+        
+    finally:
+        counter_db.close()  # Session'ı kapat
 
 
 def get_next_bordro_number(db: Session, donem: str) -> str:
