@@ -4,7 +4,7 @@
  * V2 API kullanır (yeni DDD architecture)
  */
 import axios from 'axios';
-import { CRUDService } from '@/shared/api/crud-service';
+import { CRUDService } from '@/shared/api/base.api';
 import type {
   EInvoice,
   EInvoiceSummary,
@@ -140,39 +140,6 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     const response = await axios.patch(
       `${API_BASE_URL}/v1/einvoices/${id}`,
       data
-    );
-    return response.data;
-  }
-
-  async uploadXML(formData: FormData): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/upload`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    );
-    return response.data;
-  }
-
-  async uploadPDF(formData: FormData): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/pdf/upload`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    );
-    return response.data;
-  }
-
-  async previewXML(formData: FormData): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/preview`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
     );
     return response.data;
   }
