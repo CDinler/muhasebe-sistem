@@ -7,8 +7,8 @@ from app.models.contact import Contact
 from app.models.cost_center import CostCenter
 from app.models.account import Account
 from app.models.user import User
-from app.models.personnel import Personnel
-from app.models.personnel_contract import PersonnelContract
+# Personnel models now in domains
+from app.domains.personnel.models import Personnel, PersonnelContract
 from app.models.monthly_personnel_record import MonthlyPersonnelRecord
 from app.models.luca_bordro import LucaBordro
 from app.models.monthly_puantaj import MonthlyPuantaj
