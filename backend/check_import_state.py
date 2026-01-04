@@ -11,7 +11,7 @@ conn = engine.connect()
 try:
     # Son 3 transaction
     result = conn.execute(text("""
-        SELECT transaction_number, description, created_at 
+        SELECT transaction_number, description
         FROM transactions 
         WHERE transaction_number LIKE 'F%' 
         ORDER BY transaction_number DESC 
@@ -20,7 +20,7 @@ try:
     
     print("\n📊 SON 3 TRANSACTION:")
     for row in result:
-        print(f"   {row[0]} | {row[1][:60]} | {row[2]}")
+        print(f"   {row[0]} | {row[1][:60]}")
     
     # Counter durumu
     counter = conn.execute(text("SELECT last_number FROM transaction_counter WHERE id = 1")).fetchone()
