@@ -34,12 +34,26 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+
+// 🆕 Yeni domain imports
 import {
-  einvoiceService,
+  useEInvoiceSummary,
+  useEInvoices,
+  useDeleteEInvoice,
+  useUploadXML,
+  useUploadPDF,
+  usePreviewXML,
+  useCreateTransaction,
+  useTransactionPreview,
+} from '@/domains/invoicing/einvoices/hooks/useEInvoices';
+import { einvoiceAPI } from '@/domains/invoicing/einvoices/api/einvoice.api';
+import type {
   EInvoice,
   EInvoiceSummary,
   EInvoiceFilters,
-} from '../services/einvoice';
+} from '@/domains/invoicing/einvoices/types/einvoice.types';
+
+// Legacy services (geçici - muhasebe servisleri için)
 import { costCenterService, CostCenter, accountService, Account, documentTypeService, documentSubtypeService, DocumentType, DocumentSubtype } from '../services/muhasebe.service';
 import './EInvoicesPage.compact.css';
 
@@ -109,24 +123,22 @@ const EInvoicesPage: React.FC = () => {
     fetchAccounts();
   }, []);
   
-  const [einvoices, setEInvoices] = useState<EInvoice[]>([]);
-  const [summary, setSummary] = useState<EInvoiceSummary | null>(null);
-  const [loading, setLoading] = useState(false);
+  // ========== LOCAL STATE (UI ONLY) ==========
   const [selectedInvoice, setSelectedInvoice] = useState<EInvoice | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [isImportMode, setIsImportMode] = useState(false); // Import modu için flag
+  const [isImportMode, setIsImportMode] = useState(false);
   const [importPreviewData, setImportPreviewData] = useState<any>(null);
   const [importPreviewLoading, setImportPreviewLoading] = useState(false);
   const [editableLines, setEditableLines] = useState<any[]>([]);
   const [editableTransactionNumber, setEditableTransactionNumber] = useState<string>('');
   
-  // Fatura türü ve kategori seçimi için yeni state'ler
+  // Fatura türü ve kategori seçimi için state'ler
   const [invoiceType, setInvoiceType] = useState<string>('Satış');
-  const [invoiceLineCategories, setInvoiceLineCategories] = useState<{[key: string]: string}>({});  // line_id -> category
-  const [invoiceLineAccounts, setInvoiceLineAccounts] = useState<{[key: string]: string}>({});  // line_id -> account_code
-  const [fixedAssetCategories, setFixedAssetCategories] = useState<{[key: string]: string}>({});  // line_id -> asset_category
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [invoiceLineCategories, setInvoiceLineCategories] = useState<{[key: string]: string}>({});
+  const [invoiceLineAccounts, setInvoiceLineAccounts] = useState<{[key: string]: string}>({});
+  const [fixedAssetCategories, setFixedAssetCategories] = useState<{[key: string]: string}>({});
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [xmlDirectionModalVisible, setXmlDirectionModalVisible] = useState(false);
   const [xmlPreviewModalVisible, setXmlPreviewModalVisible] = useState(false);
@@ -153,25 +165,36 @@ const EInvoicesPage: React.FC = () => {
     date_to: currentMonthEnd,
   });
 
-  // Sayfa yüklendiğinde özet ve fatura listesi
+  // ========== REACT QUERY HOOKS ==========
+  // 🆕 Summary (özet istatistikler)
+  const { data: summary, isLoading: summaryLoading } = useEInvoiceSummary({
+    date_from: filters.date_from,
+    date_to: filters.date_to,
+  });
+
+  // 🆕 E-Invoice List (fatura listesi)
+  const { data: einvoices = [], isLoading: loading, refetch: refetchInvoices } = useEInvoices(filters);
+
+  // 🆕 Mutations
+  const deleteInvoiceMutation = useDeleteEInvoice();
+  const uploadXMLMutation = useUploadXML();
+  const uploadPDFMutation = useUploadPDF();
+  const previewXMLMutation = usePreviewXML();
+  const createTransactionMutation = useCreateTransaction();
+  const transactionPreviewMutation = useTransactionPreview();
+
+  // Upload modal reset
   useEffect(() => {
-    // State'leri sıfırla
     setUploadModalVisible(false);
     setUploadProgress(0);
     setUploadStatus('');
-    
-    loadSummary();
-    loadEInvoices();
-  }, [filters]);
+  }, [einvoices]); // Liste değiştiğinde upload modal'ı kapat
 
   // 🆕 Hesap seçimi değiştiğinde otomatik preview yenile
   useEffect(() => {
-    // Import modundaysa ve hesap seçimi yapıldıysa
     if (isImportMode && selectedInvoice?.id) {
-      // En az bir hesap seçilmişse preview'ı yenile
       const hasAnyAccount = Object.keys(invoiceLineAccounts).length > 0;
       if (hasAnyAccount) {
-        // Debounce için timeout kullan (kullanıcı hızlı değiştirirse bekle)
         const timeoutId = setTimeout(() => {
           refreshPreviewWithCategories();
         }, 300);
@@ -179,36 +202,124 @@ const EInvoicesPage: React.FC = () => {
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [invoiceLineAccounts]); // invoiceLineAccounts değiştiğinde çalış
+  }, [invoiceLineAccounts]);
 
+  // ========== LEGACY FUNCTIONS (converted to use hooks) ==========
   const loadSummary = async () => {
-    try {
-      const data = await einvoiceService.getSummary({
-        date_from: filters.date_from,
-        date_to: filters.date_to,
-      });
-      setSummary(data);
-    } catch (error) {
-      message.error('İstatistikler yüklenemedi');
-    }
+    // 🔄 Artık hook kullanıyor, bu fonksiyon gereksiz ama uyumluluk için bırakıldı
+    // Direkt summary state'i kullanılabilir
   };
 
   const loadEInvoices = async () => {
-    setLoading(true);
+    // 🔄 Artık hook kullanıyor, refetchInvoices() ile tetiklenebilir
+    await refetchInvoices();
+  };
+
+  const handleDelete = async (id: number) => {
+    deleteInvoiceMutation.mutate(id, {
+      onSuccess: () => {
+        refetchInvoices();
+      }
+    });
+  };
+
+  const handleUploadXML = async (formData: FormData) => {
+    setUploadModalVisible(true);
+    setUploadStatus('Yükleniyor...');
+    
+    uploadXMLMutation.mutate(formData, {
+      onSuccess: (data) => {
+        setUploadStatus(`✅ Başarılı: ${data.imported_count} fatura`);
+        setUploadProgress(100);
+        refetchInvoices();
+      },
+      onError: () => {
+        setUploadStatus('❌ Hata oluştu');
+      }
+    });
+  };
+
+  const handleUploadPDF = async (formData: FormData) => {
+    setUploadModalVisible(true);
+    setUploadStatus('Yükleniyor...');
+    
+    uploadPDFMutation.mutate(formData, {
+      onSuccess: (data) => {
+        setUploadStatus(`✅ Başarılı: ${data.processed_count} PDF`);
+        setUploadProgress(100);
+        refetchInvoices();
+      },
+      onError: () => {
+        setUploadStatus('❌ Hata oluştu');
+      }
+    });
+  };
+
+  const handlePreviewXML = async (formData: FormData) => {
+    setPreviewLoading(true);
+    
+    previewXMLMutation.mutate(formData, {
+      onSuccess: (data) => {
+        setPreviewData(data);
+        setXmlPreviewModalVisible(true);
+        setPreviewLoading(false);
+      },
+      onError: () => {
+        setPreviewLoading(false);
+      }
+    });
+  };
+
+  const handleCreateTransaction = async (invoiceId: number, data: any) => {
+    createTransactionMutation.mutate(
+      { invoiceId, data },
+      {
+        onSuccess: () => {
+          setDetailModalVisible(false);
+          setIsImportMode(false);
+          refetchInvoices();
+        }
+      }
+    );
+  };
+
+  // 🆕 Kategorizasyon değiştiğinde preview'ı yenile
+  const refreshPreviewWithCategories = async () => {
+    if (!selectedInvoice?.id) return;
+    
     try {
-      const data = await einvoiceService.getEInvoices(filters);
-      setEInvoices(data);
-    } catch (error) {
-      message.error('E-faturalar yüklenemedi');
-    } finally {
-      setLoading(false);
+      setImportPreviewLoading(true);
+      
+      // Fatura satırları mapping'i oluştur (TÜM BİLGİLERİ GÖNDER)
+      const invoiceLinesMapping = selectedInvoice?.invoice_lines?.map((line: any, idx: number) => ({
+        line_id: String(idx + 1),
+        category: invoiceLineCategories[line.id],
+        account_code: invoiceLineAccounts[line.id],
+        item_name: line.item_name,
+        quantity: line.quantity,
+        unit_price: line.unit_price,
+        line_total: line.line_total,
+      })) || [];
+      
+      // Kategori mapping ile preview al
+      const previewData = await einvoiceAPI.previewImport(selectedInvoice.id, {
+        invoice_lines_mapping: invoiceLinesMapping,
+        cost_center_id: selectedInvoice.cost_center_id
+      });
+      
+      setImportPreviewData(previewData);
+      setEditableLines(previewData.transaction?.lines || []);
+      setImportPreviewLoading(false);
+    } catch (error: any) {
+      setImportPreviewLoading(false);
+      message.error(error.response?.data?.detail || 'Import önizlemesi yüklenemedi');
     }
   };
 
   const handleViewDetail = async (invoice: EInvoice) => {
     try {
       // API'den tam detayı çek (invoice_lines dahil)
-      const response = await einvoiceService.getEInvoice(invoice.id);
+      const response = await einvoiceAPI.getEInvoice(invoice.id);
       console.log('Fatura detayı:', response);
       console.log('invoice_lines:', response.invoice_lines);
       setSelectedInvoice(response);
@@ -217,17 +328,6 @@ const EInvoicesPage: React.FC = () => {
       console.error('Detay yükleme hatası:', error);
       setSelectedInvoice(invoice);
       setDetailModalVisible(true);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await einvoiceService.deleteEInvoice(id);
-      message.success('Fatura silindi');
-      loadEInvoices();
-      loadSummary();
-    } catch (error) {
-      message.error('Fatura silinemedi');
     }
   };
 
@@ -241,7 +341,7 @@ const EInvoicesPage: React.FC = () => {
       }
       
       // Detaylı fatura bilgisini al
-      const response = await einvoiceService.getEInvoice(id);
+      const response = await einvoiceAPI.getEInvoice(id);
       console.log('📋 Import için fatura detayı:', response);
       console.log('📋 Invoice lines:', response.invoice_lines);
       console.log('📋 Tax details:', response.tax_details);
@@ -249,7 +349,7 @@ const EInvoicesPage: React.FC = () => {
       
       // Import preview verilerini al
       setImportPreviewLoading(true);
-      const previewData = await einvoiceService.previewImport(id);
+      const previewData = await einvoiceAPI.previewImport(id);
       setImportPreviewData(previewData);
       
       // Düzenlenebilir satırları set et
@@ -305,7 +405,7 @@ const EInvoicesPage: React.FC = () => {
       })) || [];
       
       // Kategori mapping ile preview al
-      const previewData = await einvoiceService.previewImport(selectedInvoice.id, {
+      const previewData = await einvoiceAPI.previewImport(selectedInvoice.id, {
         invoice_lines_mapping: invoiceLinesMapping,
         cost_center_id: selectedInvoice.cost_center_id
       });
@@ -346,7 +446,7 @@ const EInvoicesPage: React.FC = () => {
         document_subtype_id: selectedDocumentSubtypeId || importPreviewData.transaction?.document_subtype_id,
       };
       
-      const result = await einvoiceService.importToAccounting(
+      const result = await einvoiceAPI.importToAccounting(
         importPreviewData.invoice.id,
         customData
       );
@@ -380,7 +480,7 @@ const EInvoicesPage: React.FC = () => {
         });
       }, 500);
 
-      const result = await einvoiceService.uploadFile(file);
+      const result = await einvoiceAPI.uploadFile(file);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -452,7 +552,7 @@ const EInvoicesPage: React.FC = () => {
         // Batch içindeki dosyaları paralel yükle
         const results = await Promise.allSettled(
           batch.map(file => 
-            einvoiceService.uploadPDF(file, direction)
+            einvoiceAPI.uploadPDF(file, direction)
               .then(result => ({ file, result, success: true }))
               .catch((err: any) => ({ 
                 file, 
@@ -601,7 +701,7 @@ const EInvoicesPage: React.FC = () => {
         });
       }, 500);
 
-      const result = await einvoiceService.uploadXML(fileList, direction);
+      const result = await einvoiceAPI.uploadXML(fileList, direction);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -814,7 +914,7 @@ const EInvoicesPage: React.FC = () => {
                 }
               } else if (value === 'pdf-view') {
                 // PDF Görüntüle
-                einvoiceService.getPDF(record.id)
+                einvoiceAPI.getPDF(record.id)
                   .then(blob => {
                     const url = window.URL.createObjectURL(blob);
                     window.open(url, '_blank');
@@ -822,7 +922,7 @@ const EInvoicesPage: React.FC = () => {
                   .catch(() => message.error('PDF açılamadı'));
               } else if (value === 'pdf-download') {
                 // PDF İndir
-                einvoiceService.getPDF(record.id)
+                einvoiceAPI.getPDF(record.id)
                   .then(blob => {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1349,7 +1449,7 @@ const EInvoicesPage: React.FC = () => {
           setXmlPreviewModalVisible(true);
           
           try {
-            const preview = await einvoiceService.previewXML(pendingXmlFiles);
+            const preview = await einvoiceAPI.previewXML(pendingXmlFiles);
             setPreviewData(preview);
           } catch (error: any) {
             message.error('Önizleme oluşturulamadı: ' + error.message);
@@ -1623,7 +1723,7 @@ const EInvoicesPage: React.FC = () => {
                     size="small"
                     onClick={async () => {
                       try {
-                        await einvoiceService.updateEInvoice(selectedInvoice.id, { cost_center_id: selectedInvoice.cost_center_id });
+                        await einvoiceAPI.updateEInvoice(selectedInvoice.id, { cost_center_id: selectedInvoice.cost_center_id });
                         message.success('Maliyet merkezi kaydedildi');
                         loadEInvoices();
                       } catch (e) {

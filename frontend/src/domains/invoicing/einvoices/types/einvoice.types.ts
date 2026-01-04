@@ -21,6 +21,7 @@ export interface EInvoice {
   issue_time?: string;
   tax_point_date?: string;
   signing_time?: string;
+  payment_due_date?: string;
   
   // Supplier
   supplier_tax_number?: string;
@@ -29,6 +30,9 @@ export interface EInvoice {
   supplier_address?: string;
   supplier_city?: string;
   supplier_country?: string;
+  supplier_tax_office?: string;
+  supplier_district?: string;
+  supplier_iban?: string;
   
   // Customer
   customer_tax_number?: string;
@@ -43,6 +47,7 @@ export interface EInvoice {
   tax_exclusive_amount?: number;
   tax_inclusive_amount?: number;
   allowance_total_amount?: number;
+  allowance_total?: number;
   payable_amount?: number;
   
   // Processing
@@ -50,6 +55,16 @@ export interface EInvoice {
   processing_error?: string;
   matched_pdf_path?: string;
   pdf_metadata?: any;
+  pdf_path?: string;
+  
+  // Relations
+  transaction_id?: number;
+  cost_center_id?: number;
+  contact_iban?: string;
+  
+  // Details
+  invoice_lines?: any[];
+  tax_details?: any[];
   
   // Timestamps
   created_at?: string;
@@ -84,6 +99,8 @@ export interface EInvoiceFilters {
   date_to?: string;
   sort_by?: string;
   sort_order?: 'asc' | 'desc';
+  search?: string;
+  import_status?: string;
 }
 
 export interface EInvoiceCreate {
