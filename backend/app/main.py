@@ -51,6 +51,7 @@ from app.domains.invoicing.einvoices.router import router as einvoices_router
 from app.domains.personnel.payroll.router import router as payroll_router
 from app.domains.partners.contacts.router import router as contacts_router
 from app.domains.partners.cost_centers.router import router as cost_centers_router
+from app.domains.reporting.reports.router import router as reports_router
 
 app.include_router(personnel_router, prefix="/api/v2/personnel", tags=["Personnel Domain"])
 app.include_router(payroll_router, prefix="/api/v2/personnel/payroll", tags=["Personnel Domain"])
@@ -59,6 +60,7 @@ app.include_router(transactions_router, prefix="/api/v2/accounting/transactions"
 app.include_router(einvoices_router, prefix="/api/v2/invoicing/einvoices", tags=["Invoicing Domain"])
 app.include_router(contacts_router, prefix="/api/v2/partners/contacts", tags=["Partners Domain"])
 app.include_router(cost_centers_router, prefix="/api/v2/partners/cost-centers", tags=["Partners Domain"])
+app.include_router(reports_router, prefix="/api/v2/reporting/reports", tags=["Reporting Domain"])
 
 
 if __name__ == "__main__":
