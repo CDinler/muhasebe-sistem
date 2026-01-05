@@ -119,7 +119,7 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
 
   async getPDF(id: number): Promise<Blob> {
     const response = await axios.get(
-      `${API_BASE_URL}/v1/einvoices/${id}/pdf`,
+      `${API_BASE_URL}/v1/einvoices/pdf/${id}`,
       { responseType: 'blob' }
     );
     return response.data;
