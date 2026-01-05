@@ -20,12 +20,11 @@ class ReportsRepository:
         end_date: date,
         cost_center_id: Optional[int] = None
     ):
-        """Mizan raporu"""
+        """Mizan raporu - cost_center_id desteklenmiyor (V1'de yok)"""
         return reports_crud.get_mizan_report(
             self.db,
             start_date,
-            end_date,
-            cost_center_id
+            end_date
         )
     
     def get_income_statement(
@@ -34,12 +33,11 @@ class ReportsRepository:
         end_date: date,
         cost_center_id: Optional[int] = None
     ):
-        """Gelir Tablosu"""
+        """Gelir Tablosu - cost_center_id desteklenmiyor (V1'de yok)"""
         return reports_crud.get_income_statement(
             self.db,
             start_date,
-            end_date,
-            cost_center_id
+            end_date
         )
     
     def get_debtor_creditor(
@@ -48,12 +46,11 @@ class ReportsRepository:
         end_date: date,
         cost_center_id: Optional[int] = None
     ):
-        """Borç/Alacak raporu"""
+        """Borç/Alacak raporu - cost_center_id desteklenmiyor (V1'de yok)"""
         return reports_crud.get_debtor_creditor_report(
             self.db,
             start_date,
-            end_date,
-            cost_center_id
+            end_date
         )
     
     def get_cari_report(
@@ -63,13 +60,12 @@ class ReportsRepository:
         contact_id: Optional[int] = None,
         cost_center_id: Optional[int] = None
     ):
-        """Cari hesap raporu"""
+        """Cari hesap raporu - cost_center_id desteklenmiyor (V1'de yok)"""
         return reports_crud.get_cari_report(
             self.db,
             start_date,
             end_date,
-            contact_id,
-            cost_center_id
+            contact_id
         )
     
     def get_muavin_report(
@@ -79,11 +75,10 @@ class ReportsRepository:
         account_code: Optional[str] = None,
         cost_center_id: Optional[int] = None
     ):
-        """Muavin defteri"""
+        """Muavin defteri - cost_center_id desteklenmiyor (V1'de yok)"""
         return reports_crud.get_muavin_report(
             self.db,
             start_date,
             end_date,
-            account_code,
-            cost_center_id
+            account_code
         )
