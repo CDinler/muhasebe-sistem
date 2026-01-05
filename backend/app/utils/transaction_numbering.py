@@ -62,10 +62,18 @@ def get_next_transaction_number(db: Session, prefix: str = "F", commit: bool = T
         ), {"next_num": next_num})
         
         if commit:
-            counter_db.commit()  # AYRI SESSION - ana transaction etkilenmez!
+            try:
+                counter_db.commit()  # AYRI SESSION - ana transaction etkilenmez!
+                print(f"✅ Counter commit edildi: {next_num}")  # DEBUG
+            except Exception as e:
+                print(f"❌ Counter commit HATASI: {e}")  # DEBUG
+                raise
 
         return f"{prefix}{next_num:08d}"
         
+    except Exception as e:
+        print(f"❌ get_next_transaction_number HATASI: {e}")  # DEBUG
+        raise
     finally:
         counter_db.close()  # Session'ı kapat
 
