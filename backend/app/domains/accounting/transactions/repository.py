@@ -67,7 +67,8 @@ class TransactionRepository(CRUDBase[Transaction, TransactionCreate, Transaction
         date_to: Optional[date] = None,
         cost_center_id: Optional[int] = None,
         document_type_id: Optional[int] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        order_by: Optional[str] = None
     ) -> List[Transaction]:
         """Filtrelere göre fişleri getir"""
         query = db.query(Transaction)
@@ -90,13 +91,18 @@ class TransactionRepository(CRUDBase[Transaction, TransactionCreate, Transaction
                 )
             )
         
+        # Apply ordering
+        if order_by == 'date_asc':
+            query = query.order_by(Transaction.transaction_date.asc(), Transaction.id.asc())
+        else:  # default to date_desc
+            query = query.order_by(desc(Transaction.transaction_date), desc(Transaction.id))
+        
         return (
             query
             .options(
                 joinedload(Transaction.cost_center),
                 joinedload(Transaction.doc_type)
             )
-            .order_by(desc(Transaction.transaction_date), desc(Transaction.id))
             .offset(skip)
             .limit(limit)
             .all()

@@ -91,7 +91,7 @@ const TransactionDetailPage: React.FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/transactions')}>
           Geri
         </Button>
-        <Button type="primary" icon={<EditOutlined />}>
+        <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/transactions/${id}/edit`)}>
           Düzenle
         </Button>
         <Button danger icon={<DeleteOutlined />}>
@@ -114,9 +114,6 @@ const TransactionDetailPage: React.FC = () => {
           </Descriptions.Item>
           <Descriptions.Item label="Evrak No">
             {transaction.document_number || '-'}
-          </Descriptions.Item>
-          <Descriptions.Item label="İlgili Fatura No">
-            {transaction.related_invoice_number || '-'}
           </Descriptions.Item>
           <Descriptions.Item label="Masraf Merkezi">
             {transaction.cost_center_id ? `Masraf Merkezi ${transaction.cost_center_id}` : '-'}

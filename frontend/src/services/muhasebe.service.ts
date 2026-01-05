@@ -13,16 +13,18 @@ export interface DocumentType {
   code: string;
   name: string;
   category: string;
+  requires_subtype: boolean;  // Alt tür seçimi zorunlu mu?
   is_active: boolean;
   sort_order: number;
 }
 
 export interface DocumentSubtype {
   id: number;
+  document_type_id: number;  // Foreign key - Ana evrak türü ID
   code: string;
   name: string;
-  category: string;
-  parent_code: string | null;
+  category: string | null;
+  parent_code: string | null;  // DEPRECATED - Geriye dönük uyumluluk
   is_active: boolean;
   sort_order: number;
 }
@@ -113,10 +115,13 @@ export interface Transaction {
   accounting_period: string;
   cost_center_id?: number | null;
   description?: string;
-  document_type?: string;
-  document_subtype?: string | null;
+  document_type_id?: number | null;
+  document_subtype_id?: number | null;
   document_number?: string | null;
   related_invoice_number?: string | null;
+  // Deprecated - for backward compatibility
+  document_type?: string;
+  document_subtype?: string | null;
   lines: TransactionLine[];
 }
 
@@ -167,9 +172,7 @@ export const documentTypeService = {
 };
 
 export const documentSubtypeService = {
-  getAll: (params?: { is_active?: boolean; parent_code?: string }) =>
+  getAll: (params?: { is_active?: boolean; category?: string; document_type_id?: number }) =>
     apiClient.get<DocumentSubtype[]>('/document-subtypes', { params }),
   getById: (id: number) => apiClient.get<DocumentSubtype>(`/document-subtypes/${id}`),
-  getByParentCode: (parentCode: string) => 
-    apiClient.get<DocumentSubtype[]>('/document-subtypes', { params: { parent_code: parentCode } }),
 };

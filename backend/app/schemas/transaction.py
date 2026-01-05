@@ -48,3 +48,13 @@ class TransactionResponse(TransactionBase):
     lines: List[TransactionLineResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TransactionListResponse(BaseModel):
+    """Transaction list response with pagination"""
+    items: List[TransactionResponse]
+    total: int
+    skip: int
+    limit: int
+
+    model_config = ConfigDict(from_attributes=True)

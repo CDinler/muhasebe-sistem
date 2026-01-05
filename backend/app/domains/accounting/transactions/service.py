@@ -36,7 +36,8 @@ class TransactionService:
         date_to: Optional[date] = None,
         cost_center_id: Optional[int] = None,
         document_type_id: Optional[int] = None,
-        search: Optional[str] = None
+        search: Optional[str] = None,
+        order_by: Optional[str] = None
     ) -> Dict[str, Any]:
         """Fişleri filtrele ve listele (pagination ile)"""
         transactions = self.repo.get_filtered(
@@ -47,7 +48,8 @@ class TransactionService:
             date_to=date_to,
             cost_center_id=cost_center_id,
             document_type_id=document_type_id,
-            search=search
+            search=search,
+            order_by=order_by
         )
         
         total = self.repo.count_filtered(

@@ -20,8 +20,11 @@ class Transaction(Base):
     description = Column(Text)  # FİŞ AÇIKLAMA
     
     # Document info
-    document_number = Column(String(100))  # EVRAK NO
-    related_invoice_number = Column(String(100))  # İLGİLİ FATURA NO (ödemeler için)
+    document_number = Column(String(100))  # EVRAK NO (dekont no, banka kayıt no, vb.)
+    
+    # DEPRECATED: Use invoice_transaction_mappings junction table instead
+    # This field will be removed in future version
+    related_invoice_number = Column(String(100))  # [DEPRECATED] İLGİLİ FATURA NO
     
     # Document type fields (normalized)
     document_type_id = Column(Integer, ForeignKey("document_types.id"), index=True)

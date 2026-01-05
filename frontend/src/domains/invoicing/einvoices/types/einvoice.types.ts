@@ -50,6 +50,12 @@ export interface EInvoice {
   allowance_total?: number;
   payable_amount?: number;
   
+  // Payment Tracking (computed from invoice_transaction_mappings)
+  paid_amount?: number;
+  remaining_amount?: number;
+  payment_status?: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERPAID' | 'UNKNOWN';
+  payment_percentage?: number;
+  
   // Processing
   processing_status?: string;
   processing_error?: string;

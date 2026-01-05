@@ -2,7 +2,7 @@
  * Config API Client
  * Sistem ayarları için API istekleri
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import {
   SystemConfig,
   SystemConfigCreate,
@@ -13,7 +13,7 @@ import {
   ConfigsGrouped
 } from '../types/config.types';
 
-class ConfigAPI extends BaseAPI {
+class ConfigAPI extends CRUDService<SystemConfig, SystemConfigCreate, SystemConfigUpdate> {
   constructor() {
     super('/api/v2/settings/config');
   }

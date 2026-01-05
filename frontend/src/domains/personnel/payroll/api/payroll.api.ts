@@ -1,11 +1,11 @@
 /**
  * Payroll API Client
  */
-import { BaseAPI } from '@/shared/api/base';
+import { CRUDService } from '@/shared/api/base.api';
 import apiClient from '@/shared/api/client';
 import type { PayrollCalculation, PayrollCalculateRequest } from '../types/payroll.types';
 
-class PayrollAPI extends BaseAPI {
+class PayrollAPI extends CRUDService<any, any, any> {
   constructor() {
     super('/api/v2/personnel/payroll');
   }

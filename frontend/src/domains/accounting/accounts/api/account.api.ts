@@ -2,10 +2,10 @@
  * Account API Client
  * Hesap planı için API istekleri
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import { Account, AccountCreate, AccountUpdate, AccountFilters } from '../types/account.types';
 
-class AccountAPI extends BaseAPI {
+class AccountAPI extends CRUDService<Account, AccountCreate, AccountUpdate> {
   constructor() {
     super('/api/v2/accounting/accounts');
   }

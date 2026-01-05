@@ -2,10 +2,10 @@
  * Contacts API Client
  * Cari hesaplar için API istekleri
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import { Contact, ContactCreateRequest, ContactListParams } from '../types/contact.types';
 
-class ContactsAPI extends BaseAPI {
+class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCreateRequest> {
   constructor() {
     super('/api/v2/partners/contacts');
   }

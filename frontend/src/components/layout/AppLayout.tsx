@@ -17,6 +17,7 @@ import {
   CalculatorOutlined,
   CalendarOutlined,
   TableOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -67,6 +68,11 @@ const AppLayout: React.FC = () => {
           key: '/einvoices',
           icon: <FileTextOutlined />,
           label: 'Fatura Takip',
+        },
+        {
+          key: '/einvoices/unpaid',
+          icon: <ClockCircleOutlined />,
+          label: 'Ödenmeyen Faturalar',
         },
         {
           key: '/invoice-matching',

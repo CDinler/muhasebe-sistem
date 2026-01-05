@@ -18,6 +18,7 @@ import CostCentersPage from './pages/CostCentersPage';
 import ReportsPage from './pages/ReportsPage';
 import MuavinPage from './pages/MuavinPage';
 import EInvoicesPage from './pages/EInvoicesPage';
+import UnpaidInvoicesPage from './pages/UnpaidInvoicesPage';
 import InvoiceMatchingPage from './pages/InvoiceMatchingPage';
 import SystemConfigPage from './pages/SystemConfigPage';
 import LucaBordroPage from './pages/LucaBordroPage';
@@ -51,9 +52,11 @@ function App() {
                 <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="transactions/new" element={<NewTransactionPage />} />
                 <Route path="transactions/:id" element={<TransactionDetailPage />} />
+                <Route path="transactions/:id/edit" element={<NewTransactionPage />} />
                 <Route path="contacts" element={<ContactsPage />} />
                 <Route path="cost-centers" element={<CostCentersPage />} />
                 <Route path="einvoices" element={<EInvoicesPage />} />
+                <Route path="einvoices/unpaid" element={<UnpaidInvoicesPage />} />
                 <Route path="invoice-matching" element={<InvoiceMatchingPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="muavin" element={<MuavinPage />} />

@@ -3,8 +3,13 @@
  */
 import apiClient from './client';
 
-export class CRUDService<T, TCreate, TUpdate> {
-  constructor(protected endpoint: string) {}
+export class CRUDService<T, TCreate, TUpdate = TCreate> {
+  protected client = apiClient;
+  protected baseURL: string;
+
+  constructor(protected endpoint: string) {
+    this.baseURL = endpoint;
+  }
 
   async getAll(): Promise<T[]> {
     const response = await apiClient.get(this.endpoint);

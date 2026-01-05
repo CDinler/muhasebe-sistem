@@ -18,6 +18,7 @@ class DocumentTypeResponse(BaseModel):
     code: str
     name: str
     category: str
+    requires_subtype: bool = False  # Alt tür zorunlu mu?
     is_active: bool
     sort_order: int
     
@@ -27,10 +28,11 @@ class DocumentTypeResponse(BaseModel):
 
 class DocumentSubtypeResponse(BaseModel):
     id: int
+    document_type_id: int  # Foreign key - direkt modelden geliyor
     code: str
     name: str
-    category: str
-    parent_code: Optional[str]
+    category: Optional[str] = None
+    parent_code: Optional[str] = None  # DEPRECATED - Geriye dönük uyumluluk
     is_active: bool
     sort_order: int
     
@@ -71,6 +73,7 @@ def get_document_type(doc_type_id: int, db: Session = Depends(get_db)):
 def get_document_subtypes(
     is_active: Optional[bool] = None,
     parent_code: Optional[str] = None,
+    document_type_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
     """Tüm document subtypes listesi"""
@@ -79,10 +82,19 @@ def get_document_subtypes(
     if is_active is not None:
         query = query.filter(DocumentSubtype.is_active == is_active)
     
-    if parent_code:
-        query = query.filter(DocumentSubtype.parent_code == parent_code)
+    # document_type_id ile direkt filtrele (artık foreign key)
+    if document_type_id:
+        query = query.filter(DocumentSubtype.document_type_id == document_type_id)
+    elif parent_code:
+        # Geriye dönük uyumluluk için parent_code desteği
+        doc_type = db.query(DocumentType).filter(DocumentType.code == parent_code).first()
+        if doc_type:
+            query = query.filter(DocumentSubtype.document_type_id == doc_type.id)
     
-    return query.order_by(DocumentSubtype.parent_code, DocumentSubtype.sort_order).all()
+    subtypes = query.order_by(DocumentSubtype.document_type_id, DocumentSubtype.sort_order).all()
+    
+    # Pydantic modeli otomatik olarak dönüştürür
+    return subtypes
 
 
 @subtype_router.get("/{subtype_id}", response_model=DocumentSubtypeResponse)

@@ -21,6 +21,7 @@ import {
   Tabs,
   Divider,
   Spin,
+  Form,
 } from 'antd';
 import {
   SearchOutlined,
@@ -30,6 +31,10 @@ import {
   EyeOutlined,
   UploadOutlined,
   PlusOutlined,
+  DollarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -145,6 +150,12 @@ const EInvoicesPage: React.FC = () => {
   const [pdfDirectionModalVisible, setPdfDirectionModalVisible] = useState(false);
   const [pendingPdfFiles, setPendingPdfFiles] = useState<File[]>([]);
   const [pdfDirection, setPdfDirection] = useState<'incoming' | 'outgoing' | 'incoming-archive' | 'outgoing-archive'>('incoming-archive');
+
+  // Payment Tracking States
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<EInvoice | null>(null);
+  const [paymentForm] = Form.useForm();
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Bulunduğumuz ayın tarih aralığını hesapla
   const currentMonthStart = dayjs().startOf('month').format('YYYY-MM-DD');
@@ -819,6 +830,57 @@ const EInvoicesPage: React.FC = () => {
       ),
     },
     {
+      title: 'Ödeme Durumu',
+      key: 'payment_status',
+      width: 120,
+      render: (_, record) => {
+        if (!record.payment_status || record.payment_status === 'UNKNOWN') {
+          return (
+            <div style={{ fontSize: 12, textAlign: 'center' }}>
+              <Tag color="default" style={{ fontSize: 10, margin: 0 }}>BİLGİ YOK</Tag>
+            </div>
+          );
+        }
+
+        const statusConfig = {
+          'UNPAID': { color: 'red', icon: <ClockCircleOutlined />, text: 'ÖDENMEDİ' },
+          'PARTIALLY_PAID': { color: 'orange', icon: <WarningOutlined />, text: 'KISMİ ÖDEME' },
+          'PAID': { color: 'green', icon: <CheckCircleOutlined />, text: 'ÖDENDİ' },
+          'OVERPAID': { color: 'purple', icon: <WarningOutlined />, text: 'FAZLA ÖDEME' },
+        };
+
+        const config = statusConfig[record.payment_status];
+        const percentage = record.payment_percentage || 0;
+
+        return (
+          <div style={{ fontSize: 12, lineHeight: '1.3' }}>
+            <div style={{ marginBottom: 4 }}>
+              <Tag color={config.color} icon={config.icon} style={{ fontSize: 10, margin: 0 }}>
+                {config.text}
+              </Tag>
+            </div>
+            <Progress 
+              percent={percentage} 
+              size="small" 
+              strokeColor={config.color === 'green' ? '#52c41a' : config.color === 'orange' ? '#faad14' : '#f5222d'}
+              showInfo={false}
+              style={{ marginBottom: 2 }}
+            />
+            <div style={{ fontSize: 10, color: '#666', textAlign: 'center' }}>
+              {record.paid_amount !== undefined && record.remaining_amount !== undefined ? (
+                <>
+                  <div>Ödenen: {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(record.paid_amount)} ₺</div>
+                  <div>Kalan: {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(record.remaining_amount)} ₺</div>
+                </>
+              ) : (
+                <div>{percentage.toFixed(1)}%</div>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       title: 'Senaryo Türü',
       key: 'scenario',
       width: 70,
@@ -909,6 +971,10 @@ const EInvoicesPage: React.FC = () => {
                   okText: 'Evet',
                   cancelText: 'Hayır',
               });
+              } else if (value === 'payment') {
+                // Ödeme Kaydet
+                setSelectedInvoiceForPayment(record);
+                setPaymentModalVisible(true);
             }
           }}
         >
@@ -932,6 +998,13 @@ const EInvoicesPage: React.FC = () => {
                 <FileTextOutlined style={{ marginRight: 6, color: '#1890ff' }} /> <span>PDF İndir</span>
               </Select.Option>
             </>
+          )}
+          {/* Ödeme Kaydet - Sadece incoming faturalar için */}
+          {(filters.invoice_category === 'incoming' || filters.invoice_category === 'incoming-archive') && 
+           record.payment_status !== 'PAID' && record.payable_amount && record.payable_amount > 0 && (
+            <Select.Option value="payment">
+              <DollarOutlined style={{ marginRight: 6, color: '#52c41a' }} /> <span>Ödeme Kaydet</span>
+            </Select.Option>
           )}
           <Select.Option value="delete">
             <DeleteOutlined style={{ marginRight: 6 }} /> <span>Sil</span>
@@ -2536,6 +2609,182 @@ const EInvoicesPage: React.FC = () => {
                 )}
               </>
             )}
+          </>
+        )}
+      </Modal>
+
+      {/* Ödeme Kaydet Modal */}
+      <Modal
+        title={
+          <Space>
+            <DollarOutlined style={{ color: '#52c41a' }} />
+            <span>Ödeme Kaydet</span>
+          </Space>
+        }
+        open={paymentModalVisible}
+        onCancel={() => {
+          setPaymentModalVisible(false);
+          setSelectedInvoiceForPayment(null);
+          paymentForm.resetFields();
+        }}
+        onOk={() => paymentForm.submit()}
+        confirmLoading={paymentLoading}
+        width={600}
+        okText="Ödemeyi Kaydet"
+        cancelText="İptal"
+      >
+        {selectedInvoiceForPayment && (
+          <>
+            {/* Fatura Özeti */}
+            <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
+              <Descriptions size="small" column={2}>
+                <Descriptions.Item label="Fatura No">
+                  {selectedInvoiceForPayment.invoice_number}
+                </Descriptions.Item>
+                <Descriptions.Item label="Tedarikçi">
+                  {selectedInvoiceForPayment.supplier_name}
+                </Descriptions.Item>
+                <Descriptions.Item label="Toplam Tutar">
+                  <strong>{new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(selectedInvoiceForPayment.payable_amount || 0)} ₺</strong>
+                </Descriptions.Item>
+                <Descriptions.Item label="Ödenen">
+                  <strong style={{ color: '#52c41a' }}>
+                    {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(selectedInvoiceForPayment.paid_amount || 0)} ₺
+                  </strong>
+                </Descriptions.Item>
+                <Descriptions.Item label="Kalan" span={2}>
+                  <strong style={{ color: '#f5222d', fontSize: 16 }}>
+                    {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(selectedInvoiceForPayment.remaining_amount || selectedInvoiceForPayment.payable_amount || 0)} ₺
+                  </strong>
+                </Descriptions.Item>
+              </Descriptions>
+
+              {/* Ödeme Progress */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, marginBottom: 4, color: '#666' }}>
+                  Ödeme Durumu: {selectedInvoiceForPayment.payment_percentage?.toFixed(1)}%
+                </div>
+                <Progress
+                  percent={selectedInvoiceForPayment.payment_percentage || 0}
+                  strokeColor={
+                    selectedInvoiceForPayment.payment_status === 'PAID' ? '#52c41a' :
+                    selectedInvoiceForPayment.payment_status === 'PARTIALLY_PAID' ? '#faad14' : '#f5222d'
+                  }
+                />
+              </div>
+            </Card>
+
+            {/* Ödeme Formu */}
+            <Form
+              form={paymentForm}
+              layout="vertical"
+              onFinish={async (values) => {
+                try {
+                  setPaymentLoading(true);
+                  
+                  // Backend'e ödeme kaydı gönder
+                  // TODO: Backend endpoint hazır olduğunda burası implement edilecek
+                  const response = await fetch(`/api/v2/einvoices/${selectedInvoiceForPayment.id}/payments`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      transaction_id: values.transaction_id,
+                      payment_amount: values.payment_amount,
+                      payment_date: values.payment_date.format('YYYY-MM-DD'),
+                      payment_status: 'completed',
+                      notes: values.notes,
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Ödeme kaydedilemedi');
+                  }
+
+                  message.success('Ödeme başarıyla kaydedildi');
+                  setPaymentModalVisible(false);
+                  setSelectedInvoiceForPayment(null);
+                  paymentForm.resetFields();
+                  refetchInvoices(); // Listeyi yenile
+                } catch (error) {
+                  message.error('Ödeme kaydedilirken hata oluştu: ' + error);
+                } finally {
+                  setPaymentLoading(false);
+                }
+              }}
+            >
+              <Form.Item
+                label="Ödeme Tutarı"
+                name="payment_amount"
+                rules={[
+                  { required: true, message: 'Ödeme tutarı zorunlu' },
+                  {
+                    validator: (_, value) => {
+                      const remaining = selectedInvoiceForPayment.remaining_amount || selectedInvoiceForPayment.payable_amount || 0;
+                      if (value > remaining) {
+                        return Promise.reject(`Kalan tutardan fazla olamaz (Maks: ${remaining.toFixed(2)} ₺)`);
+                      }
+                      if (value <= 0) {
+                        return Promise.reject('Ödeme tutarı 0\'dan büyük olmalı');
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder={`Kalan: ${(selectedInvoiceForPayment.remaining_amount || selectedInvoiceForPayment.payable_amount || 0).toFixed(2)} ₺`}
+                  precision={2}
+                  min={0}
+                  max={selectedInvoiceForPayment.remaining_amount || selectedInvoiceForPayment.payable_amount || 0}
+                  addonAfter="₺"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="İşlem (Banka/Kasa Fişi)"
+                name="transaction_id"
+                rules={[{ required: true, message: 'İşlem seçimi zorunlu' }]}
+                extra="Ödemenin yapıldığı banka havalesi veya kasa fişini seçin"
+              >
+                <Select placeholder="İşlem seçin" showSearch optionFilterProp="children">
+                  {/* TODO: Transaction listesi buraya gelecek */}
+                  <Select.Option value={1}>Örnek İşlem 1 - 10,000 ₺</Select.Option>
+                  <Select.Option value={2}>Örnek İşlem 2 - 5,000 ₺</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                label="Ödeme Tarihi"
+                name="payment_date"
+                rules={[{ required: true, message: 'Ödeme tarihi zorunlu' }]}
+                initialValue={dayjs()}
+              >
+                <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+              </Form.Item>
+
+              <Form.Item
+                label="Notlar"
+                name="notes"
+                extra="Taksit bilgisi, ödeme yöntemi vb. ekstra bilgiler"
+              >
+                <Input.TextArea rows={3} placeholder="Örn: 1. taksit, Banka havalesi ile ödendi" />
+              </Form.Item>
+            </Form>
+
+            {/* Ödeme Senaryosu Bilgisi */}
+            <Card size="small" style={{ marginTop: 16, backgroundColor: '#e6f7ff', borderColor: '#91d5ff' }}>
+              <div style={{ fontSize: 12 }}>
+                <strong>💡 Bilgi:</strong>
+                <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+                  <li>Tam ödeme için kalan tutarın tamamını girin</li>
+                  <li>Kısmi ödeme için taksit tutarını girin</li>
+                  <li>Birden fazla taksit için her taksit için ayrı ödeme kaydı yapın</li>
+                </ul>
+              </div>
+            </Card>
           </>
         )}
       </Modal>

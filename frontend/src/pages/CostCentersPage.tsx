@@ -3,12 +3,12 @@ import { Table, Tag, Button, Space, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
 // 🆕 V2 Domain imports
-import { useCostCenters, useCreateCostCenter, useUpdateCostCenter, useDeleteCostCenter } from '@/domains/partners/cost_centers/hooks/useCostCenters';
+import { useCostCentersList, useCreateCostCenter, useUpdateCostCenter, useDeleteCostCenter } from '@/domains/partners/cost_centers/hooks/useCostCenters';
 import type { CostCenter, CostCenterCreateRequest } from '@/domains/partners/cost_centers/types/cost-center.types';
 
 const CostCentersPage: React.FC = () => {
   // 🆕 V2 React Query hooks
-  const { data: costCenters = [], isLoading: loading, refetch } = useCostCenters();
+  const { data: costCenters = [], isLoading: loading, refetch } = useCostCentersList();
   const createMutation = useCreateCostCenter();
   const updateMutation = useUpdateCostCenter();
   const deleteMutation = useDeleteCostCenter();

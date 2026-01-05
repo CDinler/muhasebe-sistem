@@ -1,7 +1,7 @@
 /**
  * Personnel Contracts API Client
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import {
   PersonnelContract,
   PersonnelContractCreate,
@@ -9,7 +9,7 @@ import {
   PersonnelContractList
 } from '../types/contracts.types';
 
-class ContractsAPI extends BaseAPI {
+class ContractsAPI extends CRUDService<PersonnelContract, PersonnelContractCreate, PersonnelContractUpdate> {
   constructor() {
     super('/api/v2/personnel/contracts');
   }

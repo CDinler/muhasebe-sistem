@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String, Date, Time, Numeric, Text, TIMESTAMP, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import select
+from decimal import Decimal
 from app.core.database import Base
 
 
@@ -117,6 +120,95 @@ class EInvoice(Base):
 
     # Relationship
     cost_center = relationship('CostCenter', backref='einvoices')
+    transaction_mappings = relationship(
+        'InvoiceTransactionMapping',
+        back_populates='einvoice',
+        lazy='selectin'
+    )
+    
+    # ========== PAYMENT TRACKING COMPUTED PROPERTIES ==========
+    
+    @hybrid_property
+    def paid_amount(self) -> Decimal:
+        """
+        Faturaya yapılan toplam ödeme tutarı
+        invoice_transaction_mappings tablosundaki payment_amount kolonlarının toplamı
+        """
+        from app.models.invoice_transaction_mapping import InvoiceTransactionMapping
+        
+        if not self.id:
+            return Decimal('0.00')
+        
+        # Eğer relationship yüklenmişse onu kullan
+        if hasattr(self, 'transaction_mappings') and self.transaction_mappings:
+            total = sum(
+                mapping.payment_amount or Decimal('0.00')
+                for mapping in self.transaction_mappings
+                if mapping.payment_amount is not None
+            )
+            return Decimal(str(total))
+        
+        # Yoksa query ile al
+        from sqlalchemy.orm import Session
+        from sqlalchemy import inspect
+        
+        session = inspect(self).session
+        if session:
+            result = session.execute(
+                select(func.coalesce(func.sum(InvoiceTransactionMapping.payment_amount), 0))
+                .where(InvoiceTransactionMapping.einvoice_id == self.id)
+                .where(InvoiceTransactionMapping.payment_amount.isnot(None))
+            ).scalar()
+            return Decimal(str(result or 0))
+        
+        return Decimal('0.00')
+    
+    @hybrid_property
+    def remaining_amount(self) -> Decimal:
+        """
+        Faturanın kalan ödenecek tutarı
+        payable_amount - paid_amount
+        """
+        if not self.payable_amount:
+            return Decimal('0.00')
+        return Decimal(str(self.payable_amount)) - self.paid_amount
+    
+    @hybrid_property
+    def payment_status(self) -> str:
+        """
+        Fatura ödeme durumu
+        - UNPAID: Hiç ödeme yapılmamış
+        - PARTIALLY_PAID: Kısmi ödeme yapılmış
+        - PAID: Tam ödenmiş
+        - OVERPAID: Fazla ödenmiş (hata durumu)
+        """
+        if not self.payable_amount or self.payable_amount <= 0:
+            return 'UNKNOWN'
+        
+        paid = self.paid_amount
+        total = Decimal(str(self.payable_amount))
+        
+        if paid <= 0:
+            return 'UNPAID'
+        elif paid < total:
+            return 'PARTIALLY_PAID'
+        elif paid == total:
+            return 'PAID'
+        else:
+            return 'OVERPAID'
+    
+    @hybrid_property
+    def payment_percentage(self) -> float:
+        """
+        Ödeme yüzdesi (0-100)
+        """
+        if not self.payable_amount or self.payable_amount <= 0:
+            return 0.0
+        
+        paid = float(self.paid_amount)
+        total = float(self.payable_amount)
+        
+        return min(100.0, (paid / total) * 100)
     
     # ========== STATUS (Durum) - 2 alan ==========
     processing_status = Column(String(50), default='IMPORTED', index=True,

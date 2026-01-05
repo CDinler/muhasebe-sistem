@@ -2,10 +2,10 @@
  * Cost Centers API Client
  * Maliyet merkezleri için API istekleri
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import { CostCenter, CostCenterCreateRequest, CostCenterListParams } from '../types/cost-center.types';
 
-class CostCentersAPI extends BaseAPI {
+class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, CostCenterCreateRequest> {
   constructor() {
     super('/api/v2/partners/cost-centers');
   }

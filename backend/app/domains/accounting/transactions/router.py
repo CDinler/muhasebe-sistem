@@ -12,7 +12,8 @@ from app.core.database import get_db
 from app.domains.accounting.transactions.service import transaction_service
 from app.schemas.transaction import (
     TransactionResponse,
-    TransactionCreate
+    TransactionCreate,
+    TransactionListResponse
 )
 
 
@@ -38,7 +39,7 @@ def get_summary(
     )
 
 
-@router.get('/', response_model=dict)
+@router.get('/', response_model=TransactionListResponse)
 def get_transactions(
     skip: int = Query(0, ge=0, description='Atlanacak kayıt sayısı'),
     limit: int = Query(50, ge=1, le=500, description='Maksimum kayıt sayısı'),
@@ -47,6 +48,7 @@ def get_transactions(
     cost_center_id: Optional[int] = Query(None, description='Masraf merkezi ID'),
     document_type_id: Optional[int] = Query(None, description='Evrak tipi ID'),
     search: Optional[str] = Query(None, description='Arama (fiş no, açıklama, evrak no)'),
+    order_by: Optional[str] = Query(None, description='Sıralama (date_asc, date_desc)'),
     db: Session = Depends(get_db)
 ):
     """
@@ -68,7 +70,8 @@ def get_transactions(
         date_to=date_to,
         cost_center_id=cost_center_id,
         document_type_id=document_type_id,
-        search=search
+        search=search,
+        order_by=order_by
     )
     return result
 

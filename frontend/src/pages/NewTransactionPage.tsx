@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -11,9 +11,22 @@ import {
   InputNumber,
   Space,
   message,
+  Spin,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { transactionService, accountService, Account, TransactionLine } from '@/services/muhasebe.service';
+import { 
+  transactionService, 
+  accountService, 
+  documentTypeService,
+  documentSubtypeService,
+  costCenterService,
+  Account, 
+  TransactionLine,
+  DocumentType,
+  DocumentSubtype,
+  CostCenter
+} from '@/services/muhasebe.service';
+import { generateTransactionNumber } from '@/utils/numberGenerators';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
@@ -24,14 +37,73 @@ interface FormLine extends TransactionLine {
 
 const NewTransactionPage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [form] = Form.useForm();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+  const [documentSubtypes, setDocumentSubtypes] = useState<DocumentSubtype[]>([]);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [lines, setLines] = useState<FormLine[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(!!id);
+  const [selectedDocType, setSelectedDocType] = useState<number | null>(null);
+  const [requiresSubtype, setRequiresSubtype] = useState<boolean>(false);
 
   useEffect(() => {
-    loadAccounts();
-  }, []);
+    loadInitialData();
+  }, [id]);
+
+  const loadInitialData = async () => {
+    await Promise.all([
+      loadAccounts(),
+      loadDocumentTypes(),
+      loadCostCenters()
+    ]);
+    if (id) {
+      await loadTransaction();
+    }
+  };
+
+  const loadTransaction = async () => {
+    if (!id) return;
+    
+    setInitialLoading(true);
+    try {
+      const response = await transactionService.getById(Number(id));
+      const transaction = response.data;
+      
+      // Form'u doldur
+      form.setFieldsValue({
+        transaction_number: transaction.transaction_number,
+        transaction_date: dayjs(transaction.transaction_date),
+        accounting_period: transaction.accounting_period,
+        cost_center_id: transaction.cost_center_id,
+        description: transaction.description,
+        document_type_id: transaction.document_type_id,
+        document_subtype_id: transaction.document_subtype_id,
+        document_number: transaction.document_number,
+      });
+      
+      // Evrak türü seçiliyse alt türleri yükle
+      if (transaction.document_type_id) {
+        setSelectedDocType(transaction.document_type_id);
+        await loadDocumentSubtypes(transaction.document_type_id);
+      }
+      
+      // Satırları doldur
+      const formLines: FormLine[] = transaction.lines.map((line: any) => ({
+        ...line,
+        key: line.id.toString(),
+      }));
+      setLines(formLines);
+    } catch (error) {
+      console.error('Fiş yüklenemedi:', error);
+      message.error('Fiş yüklenemedi');
+      navigate('/transactions');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const loadAccounts = async () => {
     try {
@@ -39,6 +111,36 @@ const NewTransactionPage: React.FC = () => {
       setAccounts(response.data);
     } catch (error) {
       console.error('Hesaplar yüklenemedi:', error);
+    }
+  };
+
+  const loadDocumentTypes = async () => {
+    try {
+      const response = await documentTypeService.getAll({ is_active: true });
+      setDocumentTypes(response.data);
+    } catch (error) {
+      console.error('Evrak türleri yüklenemedi:', error);
+    }
+  };
+
+  const loadDocumentSubtypes = async (documentTypeId: number) => {
+    try {
+      const response = await documentSubtypeService.getAll({ 
+        is_active: true,
+        document_type_id: documentTypeId 
+      });
+      setDocumentSubtypes(response.data);
+    } catch (error) {
+      console.error('Alt evrak türleri yüklenemedi:', error);
+    }
+  };
+
+  const loadCostCenters = async () => {
+    try {
+      const response = await costCenterService.getAll({ is_active: true });
+      setCostCenters(response.data);
+    } catch (error) {
+      console.error('Masraf merkezleri yüklenemedi:', error);
     }
   };
 
@@ -95,7 +197,10 @@ const NewTransactionPage: React.FC = () => {
         transaction_date: values.transaction_date.format('YYYY-MM-DD'),
         accounting_period: values.transaction_date.format('YYYY-MM'),
         description: values.description,
-        document_type: values.document_type || 'STANDART',
+        cost_center_id: values.cost_center_id || null,
+        document_type_id: values.document_type_id || null,
+        document_subtype_id: values.document_subtype_id || null,
+        document_number: values.document_number || null,
         lines: lines.map((line) => ({
           account_id: line.account_id,
           description: line.description,
@@ -104,11 +209,19 @@ const NewTransactionPage: React.FC = () => {
         })),
       };
 
-      await transactionService.create(transaction);
-      message.success('Fiş başarıyla oluşturuldu!');
+      if (id) {
+        // Güncelleme modu
+        await transactionService.update(Number(id), transaction);
+        message.success('Fiş başarıyla güncellendi!');
+      } else {
+        // Yeni oluşturma modu
+        await transactionService.create(transaction);
+        message.success('Fiş başarıyla oluşturuldu!');
+      }
+      
       navigate('/transactions');
     } catch (error: any) {
-      message.error(error.response?.data?.detail || 'Fiş oluşturulamadı!');
+      message.error(error.response?.data?.detail || (id ? 'Fiş güncellenemedi!' : 'Fiş oluşturulamadı!'));
     } finally {
       setLoading(false);
     }
@@ -208,6 +321,10 @@ const NewTransactionPage: React.FC = () => {
 
   const totals = calculateTotals();
 
+  if (initialLoading) {
+    return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;
+  }
+
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
@@ -217,32 +334,103 @@ const NewTransactionPage: React.FC = () => {
       </Space>
 
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Card title="Fiş Bilgileri" style={{ marginBottom: 16 }}>
-          <Form.Item
-            label="Fiş No"
-            name="transaction_number"
-            rules={[{ required: true, message: 'Fiş numarası gerekli!' }]}
-            initialValue={`FIS-${dayjs().format('YYYY-MM-DD')}-${Date.now().toString().slice(-4)}`}
-          >
-            <Input placeholder="FIS-2025-001" />
-          </Form.Item>
+        <Card title={id ? "Fiş Düzenle" : "Yeni Fiş"} style={{ marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Form.Item
+              label="Fiş No"
+              name="transaction_number"
+              rules={[{ required: true, message: 'Fiş numarası gerekli!' }]}
+              initialValue={!id ? generateTransactionNumber() : undefined}
+            >
+              <Input placeholder="FIS-20260105-0001" />
+            </Form.Item>
 
-          <Form.Item
-            label="Tarih"
-            name="transaction_date"
-            rules={[{ required: true, message: 'Tarih gerekli!' }]}
-            initialValue={dayjs()}
-          >
-            <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
-          </Form.Item>
+            <Form.Item
+              label="Tarih"
+              name="transaction_date"
+              rules={[{ required: true, message: 'Tarih gerekli!' }]}
+              initialValue={!id ? dayjs() : undefined}
+            >
+              <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+            </Form.Item>
 
-          <Form.Item label="Evrak Türü" name="document_type" initialValue="STANDART">
-            <Select>
-              <Select.Option value="STANDART">STANDART</Select.Option>
-              <Select.Option value="AÇILIŞ">AÇILIŞ</Select.Option>
-              <Select.Option value="KAPANIŞ">KAPANIŞ</Select.Option>
-            </Select>
-          </Form.Item>
+            <Form.Item label="Evrak Türü" name="document_type_id">
+              <Select
+                placeholder="Evrak türü seçin"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+                onChange={(value) => {
+                  setSelectedDocType(value);
+                  
+                  // Alt tür gerekli mi kontrol et
+                  const docType = documentTypes.find(dt => dt.id === value);
+                  const needsSubtype = docType?.requires_subtype || false;
+                  setRequiresSubtype(needsSubtype);
+                  
+                  // Alt türü sıfırla
+                  form.setFieldValue('document_subtype_id', null);
+                  
+                  // Eğer alt tür gerekiyorsa yükle
+                  if (value && needsSubtype) {
+                    loadDocumentSubtypes(value);
+                  } else {
+                    setDocumentSubtypes([]);
+                  }
+                }}
+              >
+                {documentTypes.map(dt => (
+                  <Select.Option key={dt.id} value={dt.id}>
+                    {dt.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* Alt evrak türü - SADECE requires_subtype=true ise göster */}
+            {requiresSubtype && (
+              <Form.Item 
+                label="Alt Evrak Türü" 
+                name="document_subtype_id"
+                rules={[{ required: true, message: 'Alt evrak türü gerekli!' }]}
+              >
+                <Select
+                  placeholder="Alt tür seçin"
+                  allowClear
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedDocType}
+                >
+                  {documentSubtypes
+                    .filter(dst => !selectedDocType || dst.document_type_id === selectedDocType)
+                    .map(dst => (
+                      <Select.Option key={dst.id} value={dst.id}>
+                        {dst.name}
+                      </Select.Option>
+                    ))}
+                </Select>
+              </Form.Item>
+            )}
+
+            <Form.Item label="Evrak No" name="document_number">
+              <Input placeholder="Evrak numarası (dekont no, banka kayıt no, vb.)" />
+            </Form.Item>
+
+            <Form.Item label="Masraf Merkezi" name="cost_center_id">
+              <Select
+                placeholder="Masraf merkezi seçin"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+              >
+                {costCenters.map(cc => (
+                  <Select.Option key={cc.id} value={cc.id}>
+                    {cc.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
 
           <Form.Item label="Açıklama" name="description">
             <TextArea rows={2} placeholder="Fiş açıklaması" />
@@ -297,7 +485,7 @@ const NewTransactionPage: React.FC = () => {
         <Form.Item style={{ marginTop: 16 }}>
           <Space>
             <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
-              Kaydet
+              {id ? 'Güncelle' : 'Kaydet'}
             </Button>
             <Button onClick={() => navigate('/transactions')}>İptal</Button>
           </Space>

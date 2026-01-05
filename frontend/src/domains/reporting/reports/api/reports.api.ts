@@ -2,7 +2,7 @@
  * Reports API Client
  * Finansal raporlar için API istekleri
  */
-import { BaseAPI } from '../../../../shared/api/base.api';
+import { CRUDService } from '../../../../shared/api/base.api';
 import {
   MizanReport,
   IncomeStatement,
@@ -12,7 +12,7 @@ import {
   ReportParams
 } from '../types/reports.types';
 
-class ReportsAPI extends BaseAPI {
+class ReportsAPI extends CRUDService<any, any, any> {
   constructor() {
     super('/api/v2/reporting/reports');
   }
