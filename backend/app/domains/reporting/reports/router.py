@@ -15,7 +15,8 @@ from app.schemas.reports import (
     CariReport,
     MuavinReport
 )
-from .service import ReportsService
+# 🔄 Use V1 CRUD functions (already working)
+from app.crud import reports as reports_crud
 
 router = APIRouter()
 
@@ -28,8 +29,8 @@ def get_mizan_report(
     db: Session = Depends(get_db)
 ):
     """Mizan (Trial Balance) raporu"""
-    service = ReportsService(db)
-    return service.get_mizan_report(start_date, end_date, cost_center_id)
+    # V1 CRUD doesn't support cost_center_id yet, ignore it for now
+    return reports_crud.get_mizan_report(db, start_date, end_date)
 
 
 @router.get('/income-statement', response_model=IncomeStatement)
@@ -40,8 +41,7 @@ def get_income_statement(
     db: Session = Depends(get_db)
 ):
     """Gelir Tablosu (Income Statement)"""
-    service = ReportsService(db)
-    return service.get_income_statement(start_date, end_date, cost_center_id)
+    return reports_crud.get_income_statement(db, start_date, end_date)
 
 
 @router.get('/debtor-creditor', response_model=DebtorCreditorReport)
@@ -52,8 +52,7 @@ def get_debtor_creditor_report(
     db: Session = Depends(get_db)
 ):
     """Borç/Alacak raporu"""
-    service = ReportsService(db)
-    return service.get_debtor_creditor_report(start_date, end_date, cost_center_id)
+    return reports_crud.get_debtor_creditor_report(db, start_date, end_date)
 
 
 @router.get('/cari', response_model=CariReport)
@@ -65,8 +64,7 @@ def get_cari_report(
     db: Session = Depends(get_db)
 ):
     """Cari hesap raporu"""
-    service = ReportsService(db)
-    return service.get_cari_report(start_date, end_date, contact_id, cost_center_id)
+    return reports_crud.get_cari_report(db, start_date, end_date, contact_id)
 
 
 @router.get('/muavin', response_model=MuavinReport)
@@ -78,5 +76,4 @@ def get_muavin_report(
     db: Session = Depends(get_db)
 ):
     """Muavin defteri (General Ledger)"""
-    service = ReportsService(db)
-    return service.get_muavin_report(start_date, end_date, account_code, cost_center_id)
+    return reports_crud.get_muavin_report(db, start_date, end_date, account_code)

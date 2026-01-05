@@ -1,57 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, Table, Button, Space, Tag, Upload, message, Modal } from 'antd';
 import { ReloadOutlined, DownloadOutlined, UploadOutlined, FileExcelOutlined } from '@ant-design/icons';
-import axios from 'axios';
 import type { ColumnsType } from 'antd/es/table';
 
-const API_URL = 'http://localhost:8000/api/v1';
+// 🆕 V2 Domain imports
+import { useContractsList } from '@/domains/personnel/contracts/hooks/useContracts';
+import type { PersonnelContract } from '@/domains/personnel/contracts/types/contracts.types';
+import axios from 'axios';
 
-interface PersonnelContract {
-  id: number;
-  personnel_id: number;
-  cost_center_id: number | null;
-  contact_id: number | null;
-  tc_kimlik_no: string | null;
-  bolum: string | null;
-  monthly_personnel_records_id: number | null;
-  maas_hesabi: 'tipa' | 'tipb' | 'tipc' | null;
-  taseron: boolean | null;
-  taseron_id: number | null;
-  departman: 'muhasebe' | 'saha' | 'insan_kaynaklari' | 'yonetim' | 'teknik' | 'depo' | 'satin_alma' | 'finansman' | 'bt' | 'hukuk' | 'pazarlama' | 'satis' | 'kalite' | 'ar_ge' | 'proje_yonetimi' | 'muteahhit' | 'destek_hizmetleri' | 'diger' | null;
-  pozisyon: string | null;
-  unvan: string | null;
-  baslangic_tarihi: string | null;
-  bitis_tarihi: string | null;
-  aktif: boolean;
-  calisma_takvimi: 'atipi' | 'btipi' | 'ctipi' | null;
-  sigorta_durumu: 'vardir' | 'yoktur' | 'askida' | null;
-  created_at: string;
-  updated_at: string;
-  created_by: number | null;
-  updated_by: number | null;
-}
+const API_URL = 'http://localhost:8000/api/v1'; // Still using V1 for upload
 
 export default function PersonnelContractsPage() {
-  const [contracts, setContracts] = useState<PersonnelContract[]>([]);
-  const [loading, setLoading] = useState(false);
+  // 🆕 V2 React Query hooks
+  const { data: contractData, isLoading: loading, refetch } = useContractsList();
+  
+  const contracts = contractData?.contracts || [];
+  const total = contractData?.total || 0;
+  
   const [uploading, setUploading] = useState(false);
-  const [total, setTotal] = useState(0);
-
-  const loadContracts = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_URL}/personnel-contracts/`, {
-        params: { page: 1, page_size: 100 }
-      });
-      // Backend artık { items, total, page, page_size } formatında dönüyor
-      setContracts(res.data.items || []);
-      setTotal(res.data.total || 0);
-    } catch (error) {
-      console.error('Sözleşmeler yüklenemedi:', error);
-      message.error('Sözleşmeler yüklenirken hata oluştu');
-    } finally {
-      setLoading(false);
-    }
+  
+  const loadContracts = () => {
+    refetch();
   };
 
   const handleDownloadTemplate = async () => {
@@ -108,9 +77,6 @@ export default function PersonnelContractsPage() {
     return false; // Upload component otomatik yüklemesin
   };
 
-  useEffect(() => {
-    loadContracts();
-  }, []);
 
   const columns: ColumnsType<PersonnelContract> = [
     {
@@ -272,7 +238,7 @@ export default function PersonnelContractsPage() {
           rowKey="id"
           loading={loading}
           pagination={{
-            total,
+            total: total,
             pageSize: 100,
             showSizeChanger: false,
             showTotal: (total) => `Toplam ${total} sözleşme`

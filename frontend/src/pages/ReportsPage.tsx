@@ -3,96 +3,13 @@ import { Card, Button, Space, Table, Row, Col, Statistic, Tabs, DatePicker, mess
 import { FileTextOutlined, BarChartOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
-import api from '../services/api';
-import { costCenterService, CostCenter } from '../services/muhasebe.service';
+
+// 🆕 V2 Domain imports
+import { useMizanReport, useIncomeStatement, useDebtorCreditorReport, useCariReport } from '@/domains/reporting/reports/hooks/useReports';
+import type { MizanItem, MizanReport, IncomeStatementItem, IncomeStatement, DebtorCreditorItem, DebtorCreditorReport, CariReportItem, CariReport } from '@/domains/reporting/reports/types/reports.types';
+import { useCostCenters } from '@/domains/partners/cost_centers/hooks/useCostCenters';
 
 const { RangePicker } = DatePicker;
-
-// Type Definitions
-interface MizanItem {
-  account_code: string;
-  account_name: string;
-  opening_debit: number;
-  opening_credit: number;
-  period_debit: number;
-  period_credit: number;
-  closing_debit: number;
-  closing_credit: number;
-}
-
-interface MizanReport {
-  start_date: string;
-  end_date: string;
-  items: MizanItem[];
-  total_opening_debit: number;
-  total_opening_credit: number;
-  total_closing_debit: number;
-  total_closing_credit: number;
-}
-
-interface IncomeStatementItem {
-  account_code: string;
-  account_name: string;
-  amount: number;
-}
-
-interface IncomeStatement {
-  start_date: string;
-  end_date: string;
-  income_items: IncomeStatementItem[];
-  expense_items: IncomeStatementItem[];
-  total_income: number;
-  total_expense: number;
-  net_profit: number;
-}
-
-interface DebtorCreditorItem {
-  contact_id: number;
-  contact_name: string;
-  tax_number: string;
-  debit: number;
-  credit: number;
-  balance: number;
-}
-
-interface DebtorCreditorReport {
-  start_date: string;
-  end_date: string;
-  debtors: DebtorCreditorItem[];
-  creditors: DebtorCreditorItem[];
-  total_debtors: number;
-  total_creditors: number;
-  net_balance: number;
-}
-
-interface CariReportItem {
-  account_code: string;
-  contact_id: number | null;
-  contact_code: string;
-  contact_name: string;
-  tax_number: string;
-  account_type: string;
-  opening_debit: number;
-  opening_credit: number;
-  period_debit: number;
-  period_credit: number;
-  closing_debit: number;
-  closing_credit: number;
-  balance: number;
-}
-
-interface CariReport {
-  start_date: string;
-  end_date: string;
-  items: CariReportItem[];
-  total_opening_debit: number;
-  total_opening_credit: number;
-  total_period_debit: number;
-  total_period_credit: number;
-  total_closing_debit: number;
-  total_closing_credit: number;
-  total_balance: number;
-}
 
 const ReportsPage: React.FC = () => {
   // State
