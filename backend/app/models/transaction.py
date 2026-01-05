@@ -33,5 +33,15 @@ class Transaction(Base):
     doc_type = relationship("DocumentType", foreign_keys=[document_type_id])
     doc_subtype = relationship("DocumentSubtype", foreign_keys=[document_subtype_id])
     
+    @property
+    def document_type(self) -> str:
+        """Evrak türü adı"""
+        return self.doc_type.name if self.doc_type else None
+    
+    @property
+    def document_subtype(self) -> str:
+        """Evrak alt türü adı"""
+        return self.doc_subtype.name if self.doc_subtype else None
+    
     def __repr__(self):
         return f"<Transaction {self.transaction_number} - {self.accounting_period}>"

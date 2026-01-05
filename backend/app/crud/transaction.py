@@ -9,11 +9,21 @@ from app.schemas.transaction import TransactionCreate, TransactionLineCreate
 
 def get_transaction(db: Session, transaction_id: int) -> Optional[Transaction]:
     """Tek fiş getir"""
-    return db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    return db.query(Transaction).options(
+        joinedload(Transaction.lines),
+        joinedload(Transaction.doc_type),
+        joinedload(Transaction.doc_subtype),
+        joinedload(Transaction.cost_center)
+    ).filter(Transaction.id == transaction_id).first()
 
 def get_transaction_by_number(db: Session, transaction_number: str) -> Optional[Transaction]:
     """Fiş numarasına göre getir"""
-    return db.query(Transaction).filter(Transaction.transaction_number == transaction_number).first()
+    return db.query(Transaction).options(
+        joinedload(Transaction.lines),
+        joinedload(Transaction.doc_type),
+        joinedload(Transaction.doc_subtype),
+        joinedload(Transaction.cost_center)
+    ).filter(Transaction.transaction_number == transaction_number).first()
 
 def get_transactions(
     db: Session,
@@ -26,7 +36,12 @@ def get_transactions(
     search: Optional[str] = None
 ) -> List[Transaction]:
     """Fişleri listele (filtreleme ile) - Eager loading ile N+1 çözümü"""
-    query = db.query(Transaction).options(joinedload(Transaction.lines))
+    query = db.query(Transaction).options(
+        joinedload(Transaction.lines),
+        joinedload(Transaction.doc_type),
+        joinedload(Transaction.doc_subtype),
+        joinedload(Transaction.cost_center)
+    )
     
     if start_date:
         query = query.filter(Transaction.transaction_date >= start_date)
