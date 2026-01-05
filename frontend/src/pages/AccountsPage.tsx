@@ -1,27 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { accountService, Account } from '@/services/muhasebe.service';
+
+// 🆕 V2 Domain imports
+import { useAccounts } from '@/domains/accounting/accounts/hooks/useAccounts';
+import type { Account } from '@/domains/accounting/accounts/types/account.types';
 
 const AccountsPage: React.FC = () => {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadAccounts = async () => {
-    setLoading(true);
-    try {
-      const response = await accountService.getAll();
-      setAccounts(response.data);
-    } catch (error) {
-      console.error('Hesaplar yüklenemedi:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAccounts();
-  }, []);
+  // 🆕 V2 React Query hooks
+  const { data: accounts = [], isLoading: loading } = useAccounts();
 
   const accountTypeColors = {
     asset: 'blue',
