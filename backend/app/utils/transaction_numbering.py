@@ -64,9 +64,14 @@ def get_next_transaction_number(db: Session, prefix: str = "F", commit: bool = T
         if commit:
             try:
                 counter_db.commit()  # AYRI SESSION - ana transaction etkilenmez!
-                print(f"✅ Counter commit edildi: {next_num}")  # DEBUG
+                # Log dosyasına yaz
+                import datetime
+                with open('C:/Projects/muhasebe-sistem/backend/counter_debug.log', 'a') as f:
+                    f.write(f"{datetime.datetime.now()} - Counter commit OK: {next_num}\n")
             except Exception as e:
-                print(f"❌ Counter commit HATASI: {e}")  # DEBUG
+                import datetime
+                with open('C:/Projects/muhasebe-sistem/backend/counter_debug.log', 'a') as f:
+                    f.write(f"{datetime.datetime.now()} - Counter commit FAIL: {e}\n")
                 raise
 
         return f"{prefix}{next_num:08d}"

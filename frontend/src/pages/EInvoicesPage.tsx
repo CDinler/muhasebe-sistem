@@ -404,7 +404,8 @@ const EInvoicesPage: React.FC = () => {
       // Düzenlenmiş veriyi gönder - TÜM ALANLARI EKLE
       const customData = {
         invoice_type: invoiceType,
-        transaction_number: editableTransactionNumber,
+        // transaction_number GÖNDERMİYORUZ - Backend yeni numara alacak
+        // transaction_number: editableTransactionNumber,
         lines: editableLines,
         invoice_lines_mapping: invoiceLinesMapping,
         cost_center_id: selectedInvoice.cost_center_id,
