@@ -1,30 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { costCenterService, CostCenter } from '@/services/muhasebe.service';
+
+// 🆕 V2 Domain imports
+import { useCostCenters, useCreateCostCenter, useUpdateCostCenter, useDeleteCostCenter } from '@/domains/partners/cost_centers/hooks/useCostCenters';
+import type { CostCenter, CostCenterCreateRequest } from '@/domains/partners/cost_centers/types/cost-center.types';
 
 const CostCentersPage: React.FC = () => {
-  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
-  const [loading, setLoading] = useState(false);
+  // 🆕 V2 React Query hooks
+  const { data: costCenters = [], isLoading: loading, refetch } = useCostCenters();
+  const createMutation = useCreateCostCenter();
+  const updateMutation = useUpdateCostCenter();
+  const deleteMutation = useDeleteCostCenter();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCostCenter, setEditingCostCenter] = useState<CostCenter | null>(null);
   const [form] = Form.useForm();
-
-  const loadCostCenters = async () => {
-    setLoading(true);
-    try {
-      const response = await costCenterService.getAll();
-      setCostCenters(response.data);
-    } catch (error) {
-      console.error('Masraf merkezleri yüklenemedi:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadCostCenters();
-  }, []);
 
   const handleAdd = () => {
     form.resetFields();
@@ -39,28 +30,26 @@ const CostCentersPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    try {
-      await costCenterService.delete(id);
-      message.success('Masraf merkezi silindi');
-      loadCostCenters();
-    } catch (error) {
-      message.error('Masraf merkezi silinemedi');
-    }
+    deleteMutation.mutate(id, {
+      onSuccess: () => refetch()
+    });
   };
 
-  const handleSubmit = async (values: CostCenter) => {
-    try {
-      if (editingCostCenter?.id) {
-        await costCenterService.update(editingCostCenter.id, values);
-        message.success('Masraf merkezi güncellendi');
-      } else {
-        await costCenterService.create(values);
-        message.success('Masraf merkezi oluşturuldu');
-      }
-      setModalVisible(false);
-      loadCostCenters();
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || 'İşlem başarısız');
+  const handleSubmit = async (values: CostCenterCreateRequest) => {
+    if (editingCostCenter?.id) {
+      updateMutation.mutate({ id: editingCostCenter.id, data: values }, {
+        onSuccess: () => {
+          setModalVisible(false);
+          refetch();
+        }
+      });
+    } else {
+      createMutation.mutate(values, {
+        onSuccess: () => {
+          setModalVisible(false);
+          refetch();
+        }
+      });
     }
   };
 

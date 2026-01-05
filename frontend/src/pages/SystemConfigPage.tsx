@@ -1,55 +1,45 @@
 import { useState, useEffect } from 'react';
 import { Card, Table, InputNumber, Button, message, Tabs, Spin } from 'antd';
 import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
-import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v1';
-
-interface SystemConfig {
-  config_key: string;
-  config_value: string;
-  config_type: string;
-  category: string;
-  description: string;
-}
-
-interface TaxBracket {
-  id: number;
-  year: number;
-  min_amount: number;
-  max_amount: number | null;
-  tax_rate: number;
-  is_active: number;
-}
+// 🆕 V2 Domain imports
+import { useConfigs, useUpdateConfig, useTaxBrackets } from '@/domains/settings/config/hooks/useConfig';
+import type { SystemConfig, TaxBracket } from '@/domains/settings/config/types/config.types';
 
 export default function SystemConfigPage() {
-  const [configs, setConfigs] = useState<Record<string, SystemConfig[]>>({});
+  // 🆕 V2 React Query hooks
+  const { data: configs = {}, isLoading: configLoading, refetch: refetchConfigs } = useConfigs();
+  const { data: taxBracketsData = [], isLoading: taxLoading, refetch: refetchTax } = useTaxBrackets();
+  const updateConfigMutation = useUpdateConfig();
+
+  const [localConfigs, setLocalConfigs] = useState<Record<string, SystemConfig[]>>({});
   const [taxBrackets, setTaxBrackets] = useState<Record<string, TaxBracket[]>>({});
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [configRes, taxRes] = await Promise.all([
-        axios.get(`${API_URL}/system-config/configs`),
-        axios.get(`${API_URL}/system-config/tax-brackets`)
-      ]);
-      setConfigs(configRes.data);
-      setTaxBrackets(taxRes.data);
-    } catch (error) {
-      message.error('Veriler yüklenemedi');
-    } finally {
-      setLoading(false);
+  const loading = configLoading || taxLoading;
+
+  // Sync React Query data to local state for editing
+  useEffect(() => {
+    if (configs) {
+      setLocalConfigs(configs);
     }
-  };
+  }, [configs]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (taxBracketsData) {
+      // Group by year
+      const grouped = taxBracketsData.reduce((acc: Record<string, TaxBracket[]>, bracket) => {
+        const year = bracket.year.toString();
+        if (!acc[year]) acc[year] = [];
+        acc[year].push(bracket);
+        return acc;
+      }, {});
+      setTaxBrackets(grouped);
+    }
+  }, [taxBracketsData]);
 
   const handleConfigChange = (key: string, value: number) => {
-    setConfigs(prev => {
+    setLocalConfigs(prev => {
       const updated = { ...prev };
       Object.keys(updated).forEach(category => {
         updated[category] = updated[category].map(cfg =>
@@ -62,14 +52,15 @@ export default function SystemConfigPage() {
 
   const saveConfig = async (key: string, value: string) => {
     setSaving(true);
-    try {
-      await axios.put(`${API_URL}/system-config/configs/${key}`, { config_value: value });
-      message.success('Kaydedildi');
-    } catch (error) {
-      message.error('Kaydetme hatası');
-    } finally {
-      setSaving(false);
-    }
+    updateConfigMutation.mutate({ key, data: { config_value: value } }, {
+      onSuccess: () => {
+        refetchConfigs();
+        setSaving(false);
+      },
+      onError: () => {
+        setSaving(false);
+      }
+    });
   };
 
   const sskColumns = [
@@ -139,7 +130,7 @@ export default function SystemConfigPage() {
       <Card 
         title="Sistem Ayarları - Bordro Oranları" 
         extra={
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={() => { refetchConfigs(); refetchTax(); }} loading={loading}>
             Yenile
           </Button>
         }
@@ -152,7 +143,7 @@ export default function SystemConfigPage() {
                 label: 'SSK Oranları',
                 children: (
                   <Table
-                    dataSource={configs.SSK_ORANLAR || []}
+                    dataSource={localConfigs.SSK_ORANLAR || []}
                     columns={sskColumns}
                     rowKey="config_key"
                     pagination={false}
@@ -165,7 +156,7 @@ export default function SystemConfigPage() {
                 label: 'Genel Ayarlar',
                 children: (
                   <Table
-                    dataSource={configs.GENEL || []}
+                    dataSource={localConfigs.GENEL || []}
                     columns={sskColumns}
                     rowKey="config_key"
                     pagination={false}

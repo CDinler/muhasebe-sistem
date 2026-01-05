@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Modal, Form, Input, Select, message, Tabs, InputNumber, Descriptions, Drawer, Card, Row, Col, Statistic, Upload, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, TeamOutlined, ShoppingOutlined, ShopOutlined, UploadOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
-import { contactService, Contact } from '@/services/muhasebe.service';
 import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
 import api from '@/services/api';
+
+// 🆕 V2 Domain imports
+import { useContactsList, useCreateContact, useUpdateContact, useDeleteContact } from '@/domains/partners/contacts/hooks/useContacts';
+import type { Contact, ContactCreateRequest } from '@/domains/partners/contacts/types/contact.types';
 
 const { TabPane } = Tabs;
 
@@ -56,10 +59,14 @@ interface TransactionDetail {
 }
 
 const ContactsPage: React.FC = () => {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  // 🆕 V2 React Query hooks
+  const { data: contacts = [], isLoading: loading, refetch: refetchContacts } = useContactsList();
+  const createContactMutation = useCreateContact();
+  const updateContactMutation = useUpdateContact();
+  const deleteContactMutation = useDeleteContact();
+
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [searchText, setSearchText] = useState('');
-  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -79,23 +86,6 @@ const ContactsPage: React.FC = () => {
   const [transactionDetailVisible, setTransactionDetailVisible] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetail | null>(null);
   const [transactionLoading, setTransactionLoading] = useState(false);
-
-  const loadContacts = async () => {
-    setLoading(true);
-    try {
-      const response = await contactService.getAll();
-      setContacts(response.data);
-      setFilteredContacts(response.data);
-    } catch (error) {
-      console.error('Cariler yüklenemedi:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadContacts();
-  }, []);
 
   // Arama filtresi
   useEffect(() => {
@@ -134,28 +124,28 @@ const ContactsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    try {
-      await contactService.delete(id);
-      message.success('Cari silindi');
-      loadContacts();
-    } catch (error) {
-      message.error('Cari silinemedi');
-    }
+    deleteContactMutation.mutate(id, {
+      onSuccess: () => {
+        refetchContacts();
+      }
+    });
   };
 
-  const handleSubmit = async (values: Contact) => {
-    try {
-      if (editingContact?.id) {
-        await contactService.update(editingContact.id, values);
-        message.success('Cari güncellendi');
-      } else {
-        await contactService.create(values);
-        message.success('Cari oluşturuldu');
-      }
-      setModalVisible(false);
-      loadContacts();
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || 'İşlem başarısız');
+  const handleSubmit = async (values: ContactCreateRequest) => {
+    if (editingContact?.id) {
+      updateContactMutation.mutate({ id: editingContact.id, data: values }, {
+        onSuccess: () => {
+          setModalVisible(false);
+          refetchContacts();
+        }
+      });
+    } else {
+      createContactMutation.mutate(values, {
+        onSuccess: () => {
+          setModalVisible(false);
+          refetchContacts();
+        }
+      });
     }
   };
 
@@ -181,7 +171,7 @@ const ContactsPage: React.FC = () => {
       });
 
       message.success(`${response.data.added} cari eklendi, ${response.data.updated} cari güncellendi`);
-      loadContacts();
+      refetchContacts();
       
       setTimeout(() => {
         setUploadModalVisible(false);
