@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Table, InputNumber, Button, message, Tabs, Spin } from 'antd';
+import { Card, Table, InputNumber, Button, Tabs, Spin } from 'antd';
 import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 
 // 🆕 V2 Domain imports
@@ -43,7 +43,7 @@ export default function SystemConfigPage() {
       const updated = { ...prev };
       Object.keys(updated).forEach(category => {
         updated[category] = updated[category].map(cfg =>
-          cfg.config_key === key ? { ...cfg, config_value: value.toString() } : cfg
+          cfg.key === key ? { ...cfg, value: value.toString() } : cfg
         );
       });
       return updated;
@@ -72,8 +72,8 @@ export default function SystemConfigPage() {
     },
     {
       title: 'Değer',
-      dataIndex: 'config_value',
-      key: 'config_value',
+      dataIndex: 'value',
+      key: 'value',
       render: (val: string, record: SystemConfig) => (
         <InputNumber
           value={parseFloat(val)}
@@ -81,7 +81,7 @@ export default function SystemConfigPage() {
           min={0}
           max={1}
           precision={4}
-          onChange={(v) => handleConfigChange(record.config_key, v || 0)}
+          onChange={(v) => handleConfigChange(record.key, v || 0)}
           style={{ width: 120 }}
         />
       )
@@ -96,7 +96,7 @@ export default function SystemConfigPage() {
           size="small"
           icon={<SaveOutlined />}
           loading={saving}
-          onClick={() => saveConfig(record.config_key, record.config_value)}
+          onClick={() => saveConfig(record.key, record.value)}
         >
           Kaydet
         </Button>

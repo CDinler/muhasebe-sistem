@@ -2,67 +2,48 @@ import React, { useEffect, useState } from 'react';
 import { Table, Button, Tag, Space, Card, Row, Col, Statistic, Input, DatePicker } from 'antd';
 import { PlusOutlined, EyeOutlined, FileTextOutlined, CalendarOutlined, SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { transactionService, Transaction } from '@/services/muhasebe.service';
 import dayjs, { Dayjs } from 'dayjs';
+
+// 🆕 V2 Domain imports
+import { useTransactions } from '@/domains/accounting/transactions/hooks/useTransactions';
+import type { Transaction, TransactionFilters } from '@/domains/accounting/transactions/types/transaction.types';
 
 const { RangePicker } = DatePicker;
 
 const TransactionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchText, setSearchText] = useState('');
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [orderBy, setOrderBy] = useState<string>('date_desc');
 
-  const loadTransactions = async (page: number = 1, size: number = 20, order: string = 'date_desc', search: string = '') => {
-    setLoading(true);
-    try {
-      const skip = (page - 1) * size;
-      
-      // URL parametreleri
-      const params = new URLSearchParams({
-        skip: skip.toString(),
-        limit: size.toString(),
-        order_by: order
-      });
-      
-      if (search.trim()) {
-        params.append('search', search.trim());
-      }
-      
-      const [transactionsResponse, countResponse] = await Promise.all([
-        fetch(`http://localhost:8000/api/v1/transactions/?${params}`).then(r => r.json()),
-        fetch(`http://localhost:8000/api/v1/transactions/count/total?${params}`).then(r => r.json())
-      ]);
-      
-      setTransactions(transactionsResponse);
-      setFilteredTransactions(transactionsResponse);
-      setTotal(countResponse.total);
-    } catch (error) {
-      console.error('Fişler yüklenemedi:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 🆕 V2 Filters
+  const [filters, setFilters] = useState<TransactionFilters>({
+    skip: 0,
+    limit: pageSize,
+    order_by: orderBy,
+  });
 
-  // Arama yapıldığında backend'den yeniden yükle (debounce)
+  // 🆕 React Query hooks
+  const { data: transactionData, isLoading: loading } = useTransactions(filters);
+
+  const transactions = transactionData?.items || [];
+  const total = transactionData?.total || 0;
+
+  // Update filters when search, page, or orderBy changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCurrentPage(1); // Aramada ilk sayfaya dön
-      loadTransactions(1, pageSize, orderBy, searchText);
+      setFilters({
+        skip: (currentPage - 1) * pageSize,
+        limit: pageSize,
+        order_by: orderBy,
+        search: searchText.trim() || undefined,
+      });
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [searchText]);
-
-  useEffect(() => {
-    loadTransactions(currentPage, pageSize, orderBy, searchText);
-  }, [currentPage, pageSize, orderBy]);
+  }, [searchText, currentPage, pageSize, orderBy]);
 
   const columns = [
     {
@@ -71,7 +52,7 @@ const TransactionsPage: React.FC = () => {
       key: 'transaction_number',
       width: 150,
       sorter: true,
-      sortOrder: orderBy === 'number_asc' ? 'ascend' : orderBy === 'number_desc' ? 'descend' : null,
+      sortOrder: (orderBy === 'number_asc' ? 'ascend' : orderBy === 'number_desc' ? 'descend' : undefined) as any,
     },
     {
       title: 'Tarih',
@@ -80,7 +61,7 @@ const TransactionsPage: React.FC = () => {
       width: 120,
       render: (date: string) => dayjs(date).format('DD.MM.YYYY'),
       sorter: true,
-      sortOrder: orderBy === 'date_asc' ? 'ascend' : orderBy === 'date_desc' ? 'descend' : null,
+      sortOrder: (orderBy === 'date_asc' ? 'ascend' : orderBy === 'date_desc' ? 'descend' : undefined) as any,
     },
     {
       title: 'Dönem',
@@ -185,7 +166,7 @@ const TransactionsPage: React.FC = () => {
           <Card>
             <Statistic
               title="Filtrelenmiş"
-              value={filteredTransactions.length}
+              value={transactions.length}
               suffix={searchText || dateRange ? '(filtreli)' : ''}
               prefix={<CalendarOutlined />}
               valueStyle={{ color: searchText || dateRange ? '#1890ff' : undefined }}
@@ -206,10 +187,10 @@ const TransactionsPage: React.FC = () => {
 
       <Table
         columns={columns}
-        dataSource={filteredTransactions}
+        dataSource={transactions}
         rowKey="id"
         loading={loading}
-        onChange={(pagination, filters, sorter: any) => {
+        onChange={(_pagination, _filters, sorter: any) => {
           // Sıralama değiştiğinde
           if (sorter && sorter.columnKey) {
             let newOrder = orderBy;

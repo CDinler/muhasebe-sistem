@@ -1,6 +1,6 @@
 ﻿"""Transaction Pydantic schemas"""
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import date
 from decimal import Decimal
 
@@ -43,6 +43,8 @@ class TransactionCreate(TransactionBase):
 
 class TransactionResponse(TransactionBase):
     id: int
+    document_type_id: Optional[int] = None
+    document_subtype_id: Optional[int] = None  
     lines: List[TransactionLineResponse] = []
 
     model_config = ConfigDict(from_attributes=True)

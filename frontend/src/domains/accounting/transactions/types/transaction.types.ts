@@ -80,6 +80,7 @@ export interface TransactionFilters {
   cost_center_id?: number;
   document_type_id?: number;
   search?: string;
+  order_by?: string;
 }
 
 export interface TransactionListResponse {
