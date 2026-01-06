@@ -22,16 +22,16 @@ SELECT 'BACKUP TAMAMLANDI - Toplam kayıtlar:' AS mesaj,
 -- 2. MEVCUT DURUM ANALİZİ
 -- =============================================================================================================
 
--- Transactions'da kullanılan document_type ve subtype değerlerini kontrol et
-SELECT 'MEVCuT TRANSACTIONS ANALİZİ' AS mesaj;
+-- Transactions'da kullanılan document_type_id ve subtype_id değerlerini kontrol et
+SELECT 'MEVCUT TRANSACTIONS ANALİZİ' AS mesaj;
 
 SELECT 
-    document_type,
-    document_subtype,
+    document_type_id,
+    document_subtype_id,
     COUNT(*) AS kullanim_sayisi
 FROM transactions
-WHERE document_type IS NOT NULL OR document_subtype IS NOT NULL
-GROUP BY document_type, document_subtype
+WHERE document_type_id IS NOT NULL OR document_subtype_id IS NOT NULL
+GROUP BY document_type_id, document_subtype_id
 ORDER BY kullanim_sayisi DESC;
 
 -- =============================================================================================================
@@ -111,17 +111,6 @@ SELECT 'FOREIGN KEY VE UNIQUE CONSTRAINT EKLENDİ' AS mesaj;
 ALTER TABLE transactions DROP FOREIGN KEY IF EXISTS fk_trans_doctype;
 ALTER TABLE transactions DROP FOREIGN KEY IF EXISTS fk_trans_subtype;
 
--- String kolonlardan ID kolonlarına veri aktar (eğer NULL ise)
-UPDATE transactions t
-INNER JOIN document_types dt ON t.document_type = dt.name
-SET t.document_type_id = dt.id
-WHERE t.document_type_id IS NULL AND t.document_type IS NOT NULL;
-
-UPDATE transactions t
-INNER JOIN document_subtypes ds ON t.document_subtype = ds.name
-SET t.document_subtype_id = ds.id
-WHERE t.document_subtype_id IS NULL AND t.document_subtype IS NOT NULL;
-
 -- Foreign key'leri ekle
 ALTER TABLE transactions
 ADD CONSTRAINT fk_trans_doctype 
@@ -136,23 +125,7 @@ ADD CONSTRAINT fk_trans_subtype
 SELECT 'TRANSACTIONS FOREIGN KEY EKLENDİ' AS mesaj;
 
 -- =============================================================================================================
--- 7. ESKİ STRING KOLONLARINI YEDEKLE VE SİL (OPSİYONEL)
--- =============================================================================================================
-
--- ⚠️ Bu adımı hemen çalıştırmayın! Önce sistemi test edin.
--- String kolonları şimdilik tutun, sorun yoksa daha sonra silebiliriz.
-
-/*
--- Eğer her şey OK ise:
-ALTER TABLE document_subtypes DROP COLUMN parent_code;
-ALTER TABLE transactions DROP COLUMN document_type;
-ALTER TABLE transactions DROP COLUMN document_subtype;
-*/
-
-SELECT 'ESKİ KOLONLAR KORUNDU (Manuel olarak silebilirsiniz)' AS mesaj;
-
--- =============================================================================================================
--- 8. DUPLICATE KAYITLARI TEMİZLE
+-- 7. DUPLICATE KAYITLARI TEMİZLE
 -- =============================================================================================================
 
 -- Duplicate kontrol (aynı document_type_id ve code kombinasyonu)
@@ -171,7 +144,7 @@ HAVING COUNT(*) > 1;
 -- DELETE FROM document_subtypes WHERE id IN (25, 28);  -- Sadece örnek!
 
 -- =============================================================================================================
--- 9. SON KONTROL VE RAPOR
+-- 8. SON KONTROL VE RAPOR
 -- =============================================================================================================
 
 SELECT '========================================' AS '';
@@ -217,7 +190,7 @@ SELECT 'MİGRATİON BAŞARILI!' AS sonuc;
 SELECT '========================================' AS '';
 
 -- =============================================================================================================
--- 10. ROLLBACK (SORUN OLURSA)
+-- 9. ROLLBACK (SORUN OLURSA)
 -- =============================================================================================================
 
 /*

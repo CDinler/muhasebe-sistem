@@ -18,12 +18,10 @@ import {
   transactionService, 
   accountService, 
   documentTypeService,
-  documentSubtypeService,
   costCenterService,
   Account, 
   TransactionLine,
   DocumentType,
-  DocumentSubtype,
   CostCenter
 } from '@/services/muhasebe.service';
 import { generateTransactionNumber } from '@/utils/numberGenerators';
@@ -41,13 +39,10 @@ const NewTransactionPage: React.FC = () => {
   const [form] = Form.useForm();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
-  const [documentSubtypes, setDocumentSubtypes] = useState<DocumentSubtype[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [lines, setLines] = useState<FormLine[]>([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(!!id);
-  const [selectedDocType, setSelectedDocType] = useState<number | null>(null);
-  const [requiresSubtype, setRequiresSubtype] = useState<boolean>(false);
 
   useEffect(() => {
     loadInitialData();
@@ -80,15 +75,8 @@ const NewTransactionPage: React.FC = () => {
         cost_center_id: transaction.cost_center_id,
         description: transaction.description,
         document_type_id: transaction.document_type_id,
-        document_subtype_id: transaction.document_subtype_id,
         document_number: transaction.document_number,
       });
-      
-      // Evrak türü seçiliyse alt türleri yükle
-      if (transaction.document_type_id) {
-        setSelectedDocType(transaction.document_type_id);
-        await loadDocumentSubtypes(transaction.document_type_id);
-      }
       
       // Satırları doldur
       const formLines: FormLine[] = transaction.lines.map((line: any) => ({
@@ -120,18 +108,6 @@ const NewTransactionPage: React.FC = () => {
       setDocumentTypes(response.data);
     } catch (error) {
       console.error('Evrak türleri yüklenemedi:', error);
-    }
-  };
-
-  const loadDocumentSubtypes = async (documentTypeId: number) => {
-    try {
-      const response = await documentSubtypeService.getAll({ 
-        is_active: true,
-        document_type_id: documentTypeId 
-      });
-      setDocumentSubtypes(response.data);
-    } catch (error) {
-      console.error('Alt evrak türleri yüklenemedi:', error);
     }
   };
 
@@ -199,7 +175,6 @@ const NewTransactionPage: React.FC = () => {
         description: values.description,
         cost_center_id: values.cost_center_id || null,
         document_type_id: values.document_type_id || null,
-        document_subtype_id: values.document_subtype_id || null,
         document_number: values.document_number || null,
         lines: lines.map((line) => ({
           account_id: line.account_id,
@@ -360,24 +335,6 @@ const NewTransactionPage: React.FC = () => {
                 allowClear
                 showSearch
                 optionFilterProp="children"
-                onChange={(value) => {
-                  setSelectedDocType(value);
-                  
-                  // Alt tür gerekli mi kontrol et
-                  const docType = documentTypes.find(dt => dt.id === value);
-                  const needsSubtype = docType?.requires_subtype || false;
-                  setRequiresSubtype(needsSubtype);
-                  
-                  // Alt türü sıfırla
-                  form.setFieldValue('document_subtype_id', null);
-                  
-                  // Eğer alt tür gerekiyorsa yükle
-                  if (value && needsSubtype) {
-                    loadDocumentSubtypes(value);
-                  } else {
-                    setDocumentSubtypes([]);
-                  }
-                }}
               >
                 {documentTypes.map(dt => (
                   <Select.Option key={dt.id} value={dt.id}>
@@ -386,31 +343,6 @@ const NewTransactionPage: React.FC = () => {
                 ))}
               </Select>
             </Form.Item>
-
-            {/* Alt evrak türü - SADECE requires_subtype=true ise göster */}
-            {requiresSubtype && (
-              <Form.Item 
-                label="Alt Evrak Türü" 
-                name="document_subtype_id"
-                rules={[{ required: true, message: 'Alt evrak türü gerekli!' }]}
-              >
-                <Select
-                  placeholder="Alt tür seçin"
-                  allowClear
-                  showSearch
-                  optionFilterProp="children"
-                  disabled={!selectedDocType}
-                >
-                  {documentSubtypes
-                    .filter(dst => !selectedDocType || dst.document_type_id === selectedDocType)
-                    .map(dst => (
-                      <Select.Option key={dst.id} value={dst.id}>
-                        {dst.name}
-                      </Select.Option>
-                    ))}
-                </Select>
-              </Form.Item>
-            )}
 
             <Form.Item label="Evrak No" name="document_number">
               <Input placeholder="Evrak numarası (dekont no, banka kayıt no, vb.)" />

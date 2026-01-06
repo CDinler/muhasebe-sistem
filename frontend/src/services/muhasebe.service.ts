@@ -13,18 +13,6 @@ export interface DocumentType {
   code: string;
   name: string;
   category: string;
-  requires_subtype: boolean;  // Alt tür seçimi zorunlu mu?
-  is_active: boolean;
-  sort_order: number;
-}
-
-export interface DocumentSubtype {
-  id: number;
-  document_type_id: number;  // Foreign key - Ana evrak türü ID
-  code: string;
-  name: string;
-  category: string | null;
-  parent_code: string | null;  // DEPRECATED - Geriye dönük uyumluluk
   is_active: boolean;
   sort_order: number;
 }
@@ -169,10 +157,4 @@ export const documentTypeService = {
   getAll: (params?: { is_active?: boolean; category?: string }) =>
     apiClient.get<DocumentType[]>('/document-types', { params }),
   getById: (id: number) => apiClient.get<DocumentType>(`/document-types/${id}`),
-};
-
-export const documentSubtypeService = {
-  getAll: (params?: { is_active?: boolean; category?: string; document_type_id?: number }) =>
-    apiClient.get<DocumentSubtype[]>('/document-subtypes', { params }),
-  getById: (id: number) => apiClient.get<DocumentSubtype>(`/document-subtypes/${id}`),
 };
