@@ -35,6 +35,15 @@ desktop.ini
 .env.local
 *.env
 
+# Kullanıcı verileri - Git'e eklenmez, sunucuda kalır
+backend/data/
+data/
+*.pdf
+*.xml
+*.xlsb
+*.xlsx
+*.xls
+
 # Node
 node_modules/
 npm-debug.log*
