@@ -19,9 +19,28 @@ class UserLogin(BaseModel):
 class UserInDB(BaseModel):
     id: int
     username: str
+    email: Optional[str] = None
     full_name: str
     role: str
     is_active: bool
 
     class Config:
         from_attributes = True
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: Optional[str] = None
+    password: str
+    full_name: str
+    role: str = "kullanici"
+    is_active: bool = True
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None

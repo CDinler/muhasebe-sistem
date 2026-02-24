@@ -26,6 +26,10 @@ class Personnel(Base):
     # Relationships
     account = relationship("Account", foreign_keys=[accounts_id])
     contracts = relationship("PersonnelContract", back_populates="personnel")
+    draft_contracts = relationship("PersonnelDraftContract", back_populates="personnel")
+    monthly_records = relationship("MonthlyPersonnelRecord", back_populates="personnel")
+    payroll_calculations = relationship("PayrollCalculation", back_populates="personnel", foreign_keys="[PayrollCalculation.personnel_id]")
+    transactions = relationship("Transaction", back_populates="personnel")
 
     def __repr__(self):
         return f"<Personnel {self.tc_kimlik_no} - {self.ad} {self.soyad}>"
@@ -88,6 +92,7 @@ class PersonnelContract(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     personnel_id = Column(Integer, ForeignKey('personnel.id'), nullable=False, index=True)
+    personnel_draft_contracts_id = Column(Integer, ForeignKey('personnel_draft_contracts.id'), nullable=True, index=True)
     tc_kimlik_no = Column(String(11), nullable=False, index=True)
     bolum = Column(String(200), nullable=True)
     monthly_personnel_records_id = Column(Integer, ForeignKey('monthly_personnel_records.id'), nullable=True)
@@ -97,26 +102,18 @@ class PersonnelContract(Base):
     isten_cikis_tarihi = Column(Date, nullable=True)
     is_active = Column(Integer, default=1)
     
-    # Ücret bilgileri
-    ucret_nevi = Column(SQLEnum(UcretNevi), nullable=False)
-    kanun_tipi = Column(SQLEnum(KanunTipi), default=KanunTipi.K05510_TABI)
-    calisma_takvimi = Column(SQLEnum(CalismaTakvimi), nullable=True)
-    maas1_tip = Column(String(10), nullable=True)
-    maas1_tutar = Column(Numeric(18, 2), nullable=True)
-    maas2_tutar = Column(Numeric(18, 2), nullable=True)
-    maas_hesabi = Column(SQLEnum(MaasHesabi), nullable=True)
+    # Ücret bilgileri (taşındı: ucret_nevi, calisma_takvimi, maas2_tutar, maas_hesabi, fm_orani, tatil_orani → personnel_draft_contracts)
+    kanun_tipi = Column(String(50), nullable=True)
+    net_brut = Column(String(10), nullable=True)
+    ucret = Column(Numeric(18, 2), nullable=True)
     iban = Column(String(34), nullable=True)
-    
-    # Oranlar
-    fm_orani = Column(Numeric(5, 2), default=1)
-    tatil_orani = Column(Numeric(5, 2), default=1)
     
     # Taşeron
     taseron = Column(Integer, default=0)
     taseron_id = Column(Integer, ForeignKey('contacts.id'), nullable=True)
     
     # Departman
-    departman = Column(SQLEnum(Departman), nullable=True)
+    departman = Column(String(100), nullable=True)
     cost_center_id = Column(Integer, ForeignKey('cost_centers.id'), nullable=True)
     
     # Sistem
@@ -125,6 +122,7 @@ class PersonnelContract(Base):
     
     # Relationships
     personnel = relationship("Personnel", back_populates="contracts")
+    draft_contract = relationship("PersonnelDraftContract", foreign_keys=[personnel_draft_contracts_id])
     cost_center = relationship("CostCenter", foreign_keys=[cost_center_id])
     taseron_contact = relationship("Contact", foreign_keys=[taseron_id])
 

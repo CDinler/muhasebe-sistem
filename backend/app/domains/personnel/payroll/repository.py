@@ -3,9 +3,9 @@ Payroll Repository
 """
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.models.payroll_calculation import PayrollCalculation
-from app.models.luca_bordro import LucaBordro
-from app.models.monthly_puantaj import MonthlyPuantaj
+from app.models import PayrollCalculation
+from app.models import LucaBordro
+from app.models import MonthlyPuantaj
 
 
 class PayrollRepository:

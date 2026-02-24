@@ -15,7 +15,7 @@ class PersonnelAPI extends CRUDService<Personnel, PersonnelCreate, PersonnelUpda
     super('/api/v2/personnel');
   }
 
-  async getAll(params?: { skip?: number; limit?: number; search?: string }): Promise<PersonnelList> {
+  async getAll(params?: { skip?: number; limit?: number; search?: string; year_filter?: number; month_filter?: number }): Promise<PersonnelList> {
     const response = await apiClient.get(this.endpoint, { params });
     return response.data;
   }

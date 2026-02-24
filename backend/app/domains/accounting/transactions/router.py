@@ -9,8 +9,10 @@ from typing import List, Optional
 from datetime import date
 
 from app.core.database import get_db
+from app.domains.auth.dependencies import get_current_user
+from app.schemas.auth import UserInDB
 from app.domains.accounting.transactions.service import transaction_service
-from app.schemas.transaction import (
+from app.domains.accounting.transactions.schemas import (
     TransactionResponse,
     TransactionCreate,
     TransactionListResponse
@@ -24,6 +26,7 @@ router = APIRouter(tags=['Transactions (V2)'])
 def get_summary(
     date_from: Optional[date] = Query(None, description='Başlangıç tarihi'),
     date_to: Optional[date] = Query(None, description='Bitiş tarihi'),
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -49,6 +52,7 @@ def get_transactions(
     document_type_id: Optional[int] = Query(None, description='Evrak tipi ID'),
     search: Optional[str] = Query(None, description='Arama (fiş no, açıklama, evrak no)'),
     order_by: Optional[str] = Query(None, description='Sıralama (date_asc, date_desc)'),
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -76,9 +80,10 @@ def get_transactions(
     return result
 
 
-@router.get('/{id}', response_model=TransactionResponse)
+@router.get('/{id}')
 def get_transaction(
     id: int,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -87,12 +92,45 @@ def get_transaction(
     transaction = transaction_service.get_transaction(db, id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Fiş bulunamadı")
-    return transaction
+    
+    # Manuel serialize - account_code ve account_name için
+    return {
+        "id": transaction.id,
+        "transaction_number": transaction.transaction_number,
+        "transaction_date": transaction.transaction_date.isoformat(),
+        "accounting_period": transaction.accounting_period,
+        "cost_center_id": transaction.cost_center_id,
+        "description": transaction.description,
+        "document_type": transaction.document_type,
+        "document_number": transaction.document_number,
+        "related_invoice_number": transaction.related_invoice_number,
+        "document_type_id": transaction.document_type_id,
+        "lines": [
+            {
+                "id": line.id,
+                "transaction_id": line.transaction_id,
+                "account_id": line.account_id,
+                "account_code": line.account.code if line.account else None,
+                "account_name": line.account.name if line.account else None,
+                "contact_id": line.contact_id,
+                "description": line.description,
+                "debit": float(line.debit) if line.debit else 0,
+                "credit": float(line.credit) if line.credit else 0,
+                "quantity": float(line.quantity) if line.quantity else None,
+                "unit": line.unit,
+                "vat_rate": float(line.vat_rate) if line.vat_rate else None,
+                "withholding_rate": float(line.withholding_rate) if line.withholding_rate else None,
+                "vat_base": float(line.vat_base) if line.vat_base else None,
+            }
+            for line in transaction.lines
+        ]
+    }
 
 
 @router.get('/by-number/{transaction_number}', response_model=TransactionResponse)
 def get_by_number(
     transaction_number: str,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -107,6 +145,7 @@ def get_by_number(
 @router.post('/', response_model=TransactionResponse, status_code=201)
 def create_transaction(
     transaction_data: TransactionCreate,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -121,6 +160,7 @@ def create_transaction(
 def update_transaction(
     id: int,
     transaction_data: TransactionCreate,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -132,6 +172,7 @@ def update_transaction(
 @router.delete('/{id}', status_code=204)
 def delete_transaction(
     id: int,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """

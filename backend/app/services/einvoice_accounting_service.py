@@ -12,13 +12,13 @@ from datetime import datetime
 import json
 import os
 
-from app.models.einvoice import EInvoice
-from app.models.contact import Contact
-from app.models.transaction import Transaction
-from app.models.transaction_line import TransactionLine
-from app.models.account import Account
-from app.models.document_type import DocumentType, DocumentSubtype
-from app.models.cost_center import CostCenter
+from app.models import EInvoice
+from app.models import Contact
+from app.models import Transaction
+from app.models import TransactionLine
+from app.models import Account
+from app.models import DocumentType
+from app.models import CostCenter
 from app.utils.data_cleaner import (
     clean_company_name, clean_tax_number, clean_phone, 
     clean_email, clean_address, extract_iban_from_text
@@ -262,7 +262,7 @@ def create_accounting_transaction(
     E-faturadan otomatik muhasebe fişi oluştur (YENİ VERSİYON)
     
     generate_transaction_lines_from_invoice() kullanarak tüm detayları kaydet:
-    - Transaction: cost_center_id, document_type_id, document_subtype_id
+    - Transaction: cost_center_id, document_type_id
     - TransactionLine: quantity, unit, vat_rate, withholding_rate, vat_base
     
     Args:
@@ -296,12 +296,8 @@ def create_accounting_transaction(
     transaction_number = get_next_transaction_number(db, prefix="F", commit=True)
     period = einvoice.issue_date.strftime('%Y-%m')
     
-    # Belge türü ve alt türünü bul
+    # Belge türünü bul
     doc_type = db.query(DocumentType).filter(DocumentType.name == 'Alış Faturası').first()
-    doc_subtype = db.query(DocumentSubtype).filter(
-        DocumentSubtype.name == 'E-Fatura',
-        DocumentSubtype.document_type_id == doc_type.id if doc_type else None
-    ).first()
     
     # Varsayılan cost center (Merkez)
     cost_center = db.query(CostCenter).filter(CostCenter.name == 'Merkez').first()
@@ -314,8 +310,7 @@ def create_accounting_transaction(
         document_number=einvoice.invoice_number,
         description=f'{contact.name} - {einvoice.invoice_number}',
         cost_center_id=cost_center.id if cost_center else None,
-        document_type_id=doc_type.id if doc_type else None,
-        document_subtype_id=doc_subtype.id if doc_subtype else None
+        document_type_id=doc_type.id if doc_type else None
     )
     db.add(transaction)
     db.flush()
@@ -358,7 +353,7 @@ def create_custom_transaction(
     Kullanıcının düzenlediği fiş verisiyle muhasebe fişi oluştur (YENİ VERSİYON)
     
     TÜM ALANLARI KAYDET:
-    - Transaction: cost_center_id, document_type_id, document_subtype_id
+    - Transaction: cost_center_id, document_type_id
     - TransactionLine: quantity, unit, vat_rate, withholding_rate, vat_base
     
     Args:
@@ -370,7 +365,6 @@ def create_custom_transaction(
                 "transaction_number": "F00000123",  # Opsiyonel
                 "cost_center_id": 31,  # Opsiyonel
                 "document_type_id": 1,  # Opsiyonel
-                "document_subtype_id": 1,  # Opsiyonel
                 "lines": [
                     {
                         "account_code": "153",
@@ -402,19 +396,11 @@ def create_custom_transaction(
     # Belge türü ve alt türü - kullanıcı belirtmişse onu kullan
     cost_center_id = transaction_data.get('cost_center_id')
     document_type_id = transaction_data.get('document_type_id')
-    document_subtype_id = transaction_data.get('document_subtype_id')
     
     # Eğer kullanıcı belirtmemişse varsayılanları kullan
     if not document_type_id:
         doc_type = db.query(DocumentType).filter(DocumentType.name == 'Alış Faturası').first()
         document_type_id = doc_type.id if doc_type else None
-    
-    if not document_subtype_id and document_type_id:
-        doc_subtype = db.query(DocumentSubtype).filter(
-            DocumentSubtype.name == 'E-Fatura',
-            DocumentSubtype.document_type_id == document_type_id
-        ).first()
-        document_subtype_id = doc_subtype.id if doc_subtype else None
     
     if not cost_center_id:
         cost_center = db.query(CostCenter).filter(CostCenter.name == 'Merkez').first()
@@ -428,8 +414,7 @@ def create_custom_transaction(
         document_number=einvoice.invoice_number,
         description=f'{contact.name} - {einvoice.invoice_number}',
         cost_center_id=cost_center_id,
-        document_type_id=document_type_id,
-        document_subtype_id=document_subtype_id
+        document_type_id=document_type_id
     )
     db.add(transaction)
     db.flush()
@@ -533,7 +518,7 @@ def generate_transaction_preview(
     cost_center_name = None
     cost_center_code = None
     if cost_center_id:
-        from ..models.cost_center import CostCenter
+        from app.models import CostCenter
         cost_center = db.query(CostCenter).filter(CostCenter.id == cost_center_id).first()
         if cost_center:
             cost_center_name = cost_center.name
@@ -541,7 +526,7 @@ def generate_transaction_preview(
     
     # Cost center boş geliyorsa varsayılan al
     if not cost_center_id or not cost_center_name:
-        from ..models.cost_center import CostCenter
+        from app.models import CostCenter
         default_cc = db.query(CostCenter).filter(CostCenter.code == 'MERKEZ').first()
         if default_cc:
             cost_center_name = default_cc.name
@@ -602,23 +587,13 @@ def generate_transaction_preview(
     next_transaction_number = get_next_transaction_number(db, prefix="F", commit=False)
     db.rollback()  # Numarayı tüketmeyelim
     
-    # 8. Belge tipi ve alt tipi - ID ve name döndür
-    from ..models.document_type import DocumentType, DocumentSubtype
+    # 8. Belge tipi - ID ve name döndür
+    from app.models import DocumentType
     
     # Ana evrak türü: ALIS_FATURA (ID=1)
     doc_type = db.query(DocumentType).filter(DocumentType.code == 'ALIS_FATURA').first()
     document_type_id = doc_type.id if doc_type else 1
     document_type_name = doc_type.name if doc_type else 'Alış Faturası'
-    
-    # Alt evrak türü: invoice_type'a göre
-    if einvoice.invoice_type == 'E_ARSIV':
-        doc_subtype = db.query(DocumentSubtype).filter(DocumentSubtype.code == 'E_ARSIV').first()
-        document_subtype_id = doc_subtype.id if doc_subtype else 2
-        document_subtype_name = doc_subtype.name if doc_subtype else 'E-Arşiv'
-    else:
-        doc_subtype = db.query(DocumentSubtype).filter(DocumentSubtype.code == 'E_FATURA').first()
-        document_subtype_id = doc_subtype.id if doc_subtype else 1
-        document_subtype_name = doc_subtype.name if doc_subtype else 'E-Fatura'
     
     period = einvoice.issue_date.strftime('%Y-%m')
     
@@ -638,8 +613,6 @@ def generate_transaction_preview(
             'period': period,
             'document_type_id': document_type_id,
             'document_type': document_type_name,
-            'document_subtype_id': document_subtype_id,
-            'document_subtype': document_subtype_name,
             'document_number': einvoice.invoice_number,
             'description': f'{einvoice.supplier_name} - {einvoice.invoice_number}',
             'cost_center_id': cost_center_id,
@@ -975,7 +948,7 @@ def generate_transaction_lines_from_invoice(
     # Maliyet merkezi adını al
     cost_center_name = None
     if cost_center_id:
-        from app.models.cost_center import CostCenter
+        from app.models import CostCenter
         cost_center = db.query(CostCenter).filter(CostCenter.id == cost_center_id).first()
         if cost_center:
             cost_center_name = cost_center.name

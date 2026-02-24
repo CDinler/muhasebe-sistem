@@ -28,7 +28,7 @@ class CostCenterService:
         self,
         skip: int = 0,
         limit: int = 100,
-        is_active: bool = True
+        is_active: Optional[bool] = None
     ) -> List[CostCenter]:
         """Maliyet merkezlerini listele"""
         return self.repo.get_list(skip=skip, limit=limit, is_active=is_active)
@@ -36,6 +36,10 @@ class CostCenterService:
     def get_all_active(self) -> List[CostCenter]:
         """Tüm aktif maliyet merkezlerini getir"""
         return self.repo.get_all_active()
+    
+    def count_cost_centers(self, is_active: Optional[bool] = None) -> int:
+        """Maliyet merkezi sayısını döndür"""
+        return self.repo.count(is_active=is_active)
     
     def create_cost_center(self, cost_center_data: dict) -> CostCenter:
         """Yeni maliyet merkezi oluştur"""

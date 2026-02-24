@@ -12,6 +12,13 @@ export const useContractsList = (params?: {
   personnel_id?: number;
   cost_center_id?: number;
   is_active?: boolean;
+  donem?: string;
+  page?: number;
+  page_size?: number;
+  skip?: number;
+  limit?: number;
+  order_by?: string;
+  order_direction?: string;
 }) => {
   return useQuery({
     queryKey: [CONTRACTS_QUERY_KEY, 'list', params],

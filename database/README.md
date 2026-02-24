@@ -1,158 +1,137 @@
-# PostgreSQL Kurulum Rehberi
+# Database Setup Guide
 
-## Yöntem 1: Otomatik (PowerShell)
+## MySQL Muhasebe Sistem - Kurulum Rehberi
 
-```powershell
-cd C:\Projects\muhasebe-sistem
-.\scripts\setup\setup_postgresql.ps1
-```
-
-PostgreSQL şifresi sorulacak, girin.
+### Gereksinimler
+- XAMPP (MySQL 8.0+)
+- Python 3.14+
 
 ---
 
-## Yöntem 2: Manuel (pgAdmin)
+## Kurulum Adımları
 
-### Adım 1: Database Oluştur
+### 1. Database Oluştur
 
-1. pgAdmin'i aç
-2. **Servers** > **PostgreSQL 15** sağ tık
-3. **Create** > **Database**
-4. **Database:** `muhasebe_db`
-5. **Owner:** `postgres`
-6. **Encoding:** `UTF8`
-7. **Save** tıkla
-
-### Adım 2: Schema Yükle
-
-1. `muhasebe_db` database'ine sağ tık
-2. **Query Tool** seç
-3. **File** > **Open**
-4. `C:\Projects\muhasebe-sistem\database\schema.sql` seç
-5. **Execute (F5)** tıkla
-6. "Database schema created successfully!" mesajını gör
-
-### Adım 3: Seed Data Yükle
-
-Aynı Query Tool'da:
-
-1. `database/seeds/01_accounts.sql` aç ve çalıştır
-2. `database/seeds/02_cost_centers.sql` aç ve çalıştır
-3. `database/seeds/03_users.sql` aç ve çalıştır (opsiyonel)
-
-### Adım 4: Kontrol Et
-
-```sql
--- Tabloları listele
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public';
-
--- Hesap sayısını kontrol et
-SELECT COUNT(*) FROM accounts;
--- Sonuç: 24 hesap olmalı
-```
-
----
-
-## Yöntem 3: Komut Satırı (psql)
-
-```powershell
-# PostgreSQL'e bağlan
-psql -U postgres
-
-# Database oluştur
-CREATE DATABASE muhasebe_db WITH ENCODING='UTF8';
-\c muhasebe_db
-
-# Schema yükle
-\i C:/Projects/muhasebe-sistem/database/schema.sql
-
-# Seed data yükle
-\i C:/Projects/muhasebe-sistem/database/seeds/01_accounts.sql
-\i C:/Projects/muhasebe-sistem/database/seeds/02_cost_centers.sql
-
-# Çıkış
-\q
-```
-
----
-
-## Backend Bağlantı Ayarları
-
-`backend/.env` dosyasını düzenle:
+XAMPP Control Panel'den MySQL'i başlat, sonra:
 
 ```bash
-DATABASE_URL=postgresql://postgres:ŞİFRENİZ@localhost:5432/muhasebe_db
+# MySQL'e bağlan
+C:\xampp\mysql\bin\mysql.exe -u root
+
+# Database oluştur
+CREATE DATABASE muhasebe_sistem CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE muhasebe_sistem;
+EXIT;
 ```
 
-**ŞİFRENİZ** yerine PostgreSQL postgres kullanıcı şifrenizi yazın.
+### 2. Schema Yükle
+
+```bash
+# Migrations klasöründen schema'yı import et
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < database/migrations/001_initial_schema.sql
+```
+
+Bu komut **25 tablo** oluşturacak:
+- accounts, contacts, cost_centers
+- personnel, personnel_contracts, personnel_draft_contracts
+- transactions, transaction_lines
+- einvoices, luca_bordro
+- payroll_calculations, personnel_puantaj_grid
+- ve diğerleri...
+
+### 3. Seed Data Yükle
+
+```bash
+# Temel verileri yükle
+cd C:\Projects\muhasebe-sistem\database\seeds
+
+# Sırayla yükle
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 01_calendar_holidays.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 02_system_config.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 03_tax_bracket.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 04_users.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 05_cost_centers.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 06_document_types.sql
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem < 07_tax_codes.sql
+```
+
+Seed dosyaları (159 satır):
+- **01_calendar_holidays.sql** - 2026 resmi tatiller (29 satır)
+- **02_system_config.sql** - Sistem konfigürasyonu (30 satır)
+- **03_tax_bracket.sql** - Gelir vergisi dilimleri (5 satır)
+- **04_users.sql** - Test kullanıcıları (3 satır)
+- **05_cost_centers.sql** - Maliyet merkezleri (23 satır)
+- **06_document_types.sql** - Belge tipleri (39 satır)
+- **07_tax_codes.sql** - KDV/vergi kodları (30 satır)
+
+### 4. Kurulumu Doğrula
+
+```bash
+# MySQL'e bağlan
+C:\xampp\mysql\bin\mysql.exe -u root muhasebe_sistem
+
+# Tabloları kontrol et
+SHOW TABLES;
+# 25 tablo görmelisin
+
+# Seed verilerini kontrol et
+SELECT COUNT(*) FROM calendar_holidays;  -- 29
+SELECT COUNT(*) FROM system_config;      -- 30
+SELECT COUNT(*) FROM tax_bracket;        -- 5
+SELECT COUNT(*) FROM users;              -- 3
+SELECT COUNT(*) FROM cost_centers;       -- 23
+SELECT COUNT(*) FROM document_types;     -- 39
+SELECT COUNT(*) FROM tax_codes;          -- 30
+```
+
+---
+
+## Backend Konfigürasyonu
+
+`.env` dosyasını kontrol et:
+
+```env
+DATABASE_URL=mysql+pymysql://root@localhost/muhasebe_sistem
+```
+
+---
+
+## Notlar
+
+- ⚠️ **Üretim ortamında** MySQL root kullanıcısı yerine özel kullanıcı oluşturun
+- 🔐 **Şifre** belirlemek için: `mysqladmin -u root password "yeni_sifre"`
+- 📦 **Yedekleme**: `mysqldump -u root muhasebe_sistem > backup_$(date +%Y%m%d).sql`
+- 🔄 **Migration**: Gelecekteki schema değişiklikleri için `backend/alembic/` kullanın
 
 ---
 
 ## Sorun Giderme
 
-### "psql komutu bulunamadı"
-
-PostgreSQL bin klasörünü PATH'e ekle:
-
-```powershell
-$env:Path += ";C:\Program Files\PostgreSQL\15\bin"
+### "Access denied" hatası
+```bash
+# MySQL root şifresini sıfırla (XAMPP)
+# 1. XAMPP'den MySQL'i durdur
+# 2. my.ini dosyasına ekle: skip-grant-tables
+# 3. MySQL'i başlat ve şifreyi değiştir
 ```
 
-### "password authentication failed"
-
-Şifre yanlış. pgAdmin'de şifreyi sıfırla:
-
-1. **postgres** kullanıcısına sağ tık
-2. **Properties**
-3. **Definition** > **Password**
-4. Yeni şifre gir, **Save**
-
-### "database already exists"
-
-```sql
-DROP DATABASE muhasebe_db;
-CREATE DATABASE muhasebe_db WITH ENCODING='UTF8';
+### "Unknown database" hatası
+```bash
+# Database'in oluşturulduğundan emin ol
+SHOW DATABASES;
 ```
 
----
-
-## Başarı Kontrolü
-
-```sql
--- Tüm tabloları listele
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public'
-ORDER BY table_name;
-
--- Beklenen: 6 tablo
--- accounts, contacts, cost_centers, transaction_lines, transactions, users
-
--- Hesap planı kontrolü
-SELECT code, name FROM accounts ORDER BY code LIMIT 5;
-```
-
-Çıktı:
-```
- code |         name          
-------+----------------------
- 100  | KASA
- 101  | ALINAN ÇEKLER
- 102  | BANKALAR
- 120  | ALICILAR
- 121  | ALACAK SENETLERİ
+### Tablo oluşturma hatası
+```bash
+# Foreign key kontrolünü kapat
+SET FOREIGN_KEY_CHECKS=0;
+# Schema'yı yükle
+# Foreign key kontrolünü aç
+SET FOREIGN_KEY_CHECKS=1;
 ```
 
 ---
 
-## Sonraki Adım
+## İletişim
 
-Backend'i başlat ve test et:
-
-```powershell
-cd C:\Projects\muhasebe-sistem\backend
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn app.main:app --reload
-```
-
-http://127.0.0.1:8000/docs adresini aç.
+Sorun bildirmek için: GitHub Issues

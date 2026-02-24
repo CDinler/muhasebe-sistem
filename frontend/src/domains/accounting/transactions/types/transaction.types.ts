@@ -75,12 +75,16 @@ export interface TransactionCreate {
 export interface TransactionFilters {
   skip?: number;
   limit?: number;
+  offset?: number;
   date_from?: string;
   date_to?: string;
   cost_center_id?: number;
   document_type_id?: number;
   search?: string;
+  accounting_period?: string;
   order_by?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 export interface TransactionListResponse {

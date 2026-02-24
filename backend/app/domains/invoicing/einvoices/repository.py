@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, or_, and_
 
 from app.shared.base.repository import CRUDBase
-from app.models.einvoice import EInvoice
-from app.schemas.einvoice import EInvoiceCreate, EInvoiceUpdate
+from app.models import EInvoice
+from app.domains.invoicing.einvoices.schemas import EInvoiceCreate, EInvoiceUpdate
 
 
 class EInvoiceRepository(CRUDBase[EInvoice, EInvoiceCreate, EInvoiceUpdate]):

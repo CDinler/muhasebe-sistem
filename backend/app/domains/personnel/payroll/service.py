@@ -7,7 +7,7 @@ from typing import List
 from fastapi import HTTPException
 
 from app.domains.personnel.payroll.repository import payroll_repo
-from app.models.payroll_calculation import PayrollCalculation
+from app.models import PayrollCalculation
 
 
 class PayrollService:
@@ -22,15 +22,12 @@ class PayrollService:
     
     def calculate_payroll(self, db: Session, yil: int, ay: int, donem: str):
         """
-        Bordro hesaplama - V1 endpoint logic'ini kullan
-        Şimdilik V1'e forward ediyoruz, ileride buraya taşınacak
+        Bordro hesaplama - V2 service kullan
         """
-        # TODO: V1'deki hesaplama logic'ini buraya taşı
-        from app.api.v1.endpoints.bordro_calculation import calculate_bordro as v1_calculate
-        from app.api.v1.endpoints.bordro_calculation import CalculateRequest
+        from app.domains.personnel.bordro_calculation.service import BordroCalculationService
         
-        req = CalculateRequest(yil=yil, ay=ay, donem=donem)
-        return v1_calculate(req, db)
+        service = BordroCalculationService(db)
+        return service.calculate(yil, ay)
 
 
 payroll_service = PayrollService()

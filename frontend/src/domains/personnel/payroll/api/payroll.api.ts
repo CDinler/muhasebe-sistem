@@ -7,7 +7,7 @@ import type { PayrollCalculation, PayrollCalculateRequest } from '../types/payro
 
 class PayrollAPI extends CRUDService<any, any, any> {
   constructor() {
-    super('/api/v2/personnel/payroll');
+    super('/api/v2/personnel/bordro-calculation');  // V2 endpoint
   }
 
   /**

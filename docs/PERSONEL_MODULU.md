@@ -128,8 +128,8 @@ CREATE TABLE personnel_contracts (
     
     -- Ücret Bilgileri
     ucret_nevi ENUM('MAKTU_AYLIK', 'AYLIK', 'GUNLUK') NOT NULL,
-    maas1_tip VARCHAR(10),                      -- BRÜT veya NET
-    maas1_tutar DECIMAL(18,2),                  -- Luca maaş tutarı
+    net_brut VARCHAR(10),                      -- BRÜT veya NET
+    ucret DECIMAL(18,2),                  -- Luca maaş tutarı
     maas2_tutar DECIMAL(18,2),                  -- Net ücret (bordro yazarsa NULL)
     kanun_tipi ENUM('05510', '00000', 'EMEKLI') DEFAULT '05510',
     

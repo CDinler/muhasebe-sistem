@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    
+    # Email / SMTP Settings
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = "muhasebe@example.com"
+    SMTP_PASSWORD: str = "your-app-password"
+    SMTP_USE_TLS: bool = True
 
 
 settings = Settings()

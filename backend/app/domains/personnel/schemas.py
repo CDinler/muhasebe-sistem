@@ -53,16 +53,11 @@ class PersonnelContractBase(BaseModel):
     ise_giris_tarihi: date
     isten_cikis_tarihi: Optional[date] = None
     is_active: int = 1
-    ucret_nevi: str
+    # Moved to personnel_draft_contracts: ucret_nevi, calisma_takvimi, maas2_tutar, maas_hesabi, fm_orani, tatil_orani
     kanun_tipi: str = "K05510_TABI"
-    calisma_takvimi: Optional[str] = None
-    maas1_tip: Optional[str] = None
-    maas1_tutar: Optional[float] = None
-    maas2_tutar: Optional[float] = None
-    maas_hesabi: Optional[str] = None
+    net_brut: Optional[str] = None
+    ucret: Optional[float] = None
     iban: Optional[str] = None
-    fm_orani: float = 1.0
-    tatil_orani: float = 1.0
     taseron: int = 0
     taseron_id: Optional[int] = None
     departman: Optional[str] = None
@@ -77,7 +72,7 @@ class PersonnelContractUpdate(BaseModel):
     bolum: Optional[str] = None
     isten_cikis_tarihi: Optional[date] = None
     is_active: Optional[int] = None
-    ucret_nevi: Optional[str] = None
+    # Removed: ucret_nevi (moved to personnel_draft_contracts)
     maas1_tutar: Optional[float] = None
     cost_center_id: Optional[int] = None
 

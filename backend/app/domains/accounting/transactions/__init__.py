@@ -1,5 +1,5 @@
 """Transactions domain package"""
-from app.domains.accounting.transactions.repository import transaction_repo
-from app.domains.accounting.transactions.service import transaction_service
+# Avoid circular imports - only export router
+from app.domains.accounting.transactions.router import router
 
-__all__ = ['transaction_repo', 'transaction_service']
+__all__ = ['router']

@@ -3,7 +3,6 @@
  * 
  * V2 API kullanır (yeni DDD architecture)
  */
-import axios from 'axios';
 import apiClient from '@/shared/api/client';
 import { CRUDService } from '@/shared/api/base.api';
 import type {
@@ -13,8 +12,6 @@ import type {
   EInvoiceCreate,
   EInvoiceUpdate
 } from '../types/einvoice.types';
-
-const API_BASE_URL = 'http://localhost:8000/api';
 
 class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> {
   constructor() {
@@ -28,9 +25,14 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     date_from?: string;
     date_to?: string;
   }): Promise<EInvoiceSummary> {
+    // Remove undefined/invalid params to avoid "Invalid Date" in query string
+    const cleanParams = params ? Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== 'Invalid Date')
+    ) : {};
+    
     const response = await apiClient.get<EInvoiceSummary>(
       `${this.endpoint}/summary`,
-      { params }
+      { params: cleanParams }
     );
     return response.data;
   }
@@ -39,9 +41,14 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
    * Filtrelenmiş liste
    */
   async getFiltered(filters: EInvoiceFilters): Promise<EInvoice[]> {
+    // Remove undefined/invalid filters to avoid "Invalid Date" in query string
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v !== undefined && v !== 'Invalid Date')
+    );
+    
     const response = await apiClient.get<EInvoice[]>(
       this.endpoint,
-      { params: filters }
+      { params: cleanFilters }
     );
     return response.data;
   }
@@ -63,11 +70,11 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
   }
 
   /**
-   * V1 API fallback (still on V1)
+   * V2 API endpoints
    */
   async importToAccounting(id: number, data: any): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/${id}/import`,
+    const response = await apiClient.post(
+      `${this.endpoint}/${id}/import`,
       data
     );
     return response.data;
@@ -77,8 +84,8 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     const formData = new FormData();
     formData.append('file', file);
     
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/upload-file`,
+    const response = await apiClient.post(
+      `${this.endpoint}/upload-file`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -87,13 +94,9 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     return response.data;
   }
 
-  async uploadXML(files: File[], direction: string): Promise<any> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    formData.append('direction', direction);
-    
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/upload-xml`,
+  async uploadXML(formData: FormData): Promise<any> {
+    const response = await apiClient.post(
+      `${this.endpoint}/upload-xml`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -102,13 +105,9 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
     return response.data;
   }
 
-  async uploadPDF(file: File, direction: string): Promise<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('direction', direction);
-    
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/pdf/upload`,
+  async uploadPDF(formData: FormData): Promise<any> {
+    const response = await apiClient.post(
+      `${this.endpoint}/pdf/upload`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -118,19 +117,16 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
   }
 
   async getPDF(id: number): Promise<Blob> {
-    const response = await axios.get(
-      `${API_BASE_URL}/v1/einvoices/pdf/${id}`,
+    const response = await apiClient.get(
+      `${this.endpoint}/pdf/${id}`,
       { responseType: 'blob' }
     );
     return response.data;
   }
 
-  async previewXML(files: File[]): Promise<any> {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/preview-xml`,
+  async previewXML(formData: FormData): Promise<any> {
+    const response = await apiClient.post(
+      `${this.endpoint}/preview-xml`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -140,24 +136,24 @@ class EInvoiceAPI extends CRUDService<EInvoice, EInvoiceCreate, EInvoiceUpdate> 
   }
 
   async updateEInvoice(id: number, data: any): Promise<any> {
-    const response = await axios.patch(
-      `${API_BASE_URL}/v1/einvoices/${id}`,
+    const response = await apiClient.patch(
+      `${this.endpoint}/${id}`,
       data
     );
     return response.data;
   }
 
   async createTransaction(invoiceId: number, data: any): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/${invoiceId}/transaction`,
+    const response = await apiClient.post(
+      `${this.endpoint}/${invoiceId}/transaction`,
       data
     );
     return response.data;
   }
 
   async getTransactionPreview(invoiceId: number, data: any): Promise<any> {
-    const response = await axios.post(
-      `${API_BASE_URL}/v1/einvoices/${invoiceId}/transaction/preview`,
+    const response = await apiClient.post(
+      `${this.endpoint}/${invoiceId}/transaction/preview`,
       data
     );
     return response.data;

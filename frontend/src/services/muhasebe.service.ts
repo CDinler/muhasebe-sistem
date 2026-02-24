@@ -125,36 +125,36 @@ export const accountService = {
 
 export const transactionService = {
   getAll: (params?: { start_date?: string; end_date?: string; cost_center_id?: number; skip?: number; limit?: number; order_by?: string }) =>
-    apiClient.get<Transaction[]>('/transactions', { params }),
-  getById: (id: number) => apiClient.get<Transaction>(`/transactions/${id}`),
-  getByNumber: (number: string) => apiClient.get<Transaction>(`/transactions/number/${number}`),
-  create: (data: Transaction) => apiClient.post<Transaction>('/transactions', data),
-  update: (id: number, data: Transaction) => apiClient.put<Transaction>(`/transactions/${id}`, data),
-  delete: (id: number) => apiClient.delete(`/transactions/${id}`),
+    apiClient.get<Transaction[]>('/accounting/transactions', { params }),
+  getById: (id: number) => apiClient.get<Transaction>(`/accounting/transactions/${id}`),
+  getByNumber: (number: string) => apiClient.get<Transaction>(`/accounting/transactions/number/${number}`),
+  create: (data: Transaction) => apiClient.post<Transaction>('/accounting/transactions', data),
+  update: (id: number, data: Transaction) => apiClient.put<Transaction>(`/accounting/transactions/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/accounting/transactions/${id}`),
 };
 
 export const contactService = {
   getAll: (params?: { is_active?: boolean; contact_type?: string }) =>
-    apiClient.get<Contact[]>('/contacts', { params }),
-  getById: (id: number) => apiClient.get<Contact>(`/contacts/${id}`),
-  getByTaxNumber: (taxNumber: string) => apiClient.get<Contact>(`/contacts/tax/${taxNumber}`),
-  create: (data: Contact) => apiClient.post<Contact>('/contacts', data),
-  update: (id: number, data: Contact) => apiClient.put<Contact>(`/contacts/${id}`, data),
-  delete: (id: number) => apiClient.delete(`/contacts/${id}`),
+    apiClient.get<Contact[]>('/partners/contacts', { params }),
+  getById: (id: number) => apiClient.get<Contact>(`/partners/contacts/${id}`),
+  getByTaxNumber: (taxNumber: string) => apiClient.get<Contact>(`/partners/contacts/tax/${taxNumber}`),
+  create: (data: Contact) => apiClient.post<Contact>('/partners/contacts', data),
+  update: (id: number, data: Contact) => apiClient.put<Contact>(`/partners/contacts/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/partners/contacts/${id}`),
 };
 
 export const costCenterService = {
   getAll: (params?: { is_active?: boolean }) =>
-    apiClient.get<CostCenter[]>('/cost-centers', { params }),
-  getById: (id: number) => apiClient.get<CostCenter>(`/cost-centers/${id}`),
-  getByCode: (code: string) => apiClient.get<CostCenter>(`/cost-centers/code/${code}`),
-  create: (data: CostCenter) => apiClient.post<CostCenter>('/cost-centers', data),
-  update: (id: number, data: CostCenter) => apiClient.put<CostCenter>(`/cost-centers/${id}`, data),
-  delete: (id: number) => apiClient.delete(`/cost-centers/${id}`),
+    apiClient.get<CostCenter[]>('/partners/cost-centers', { params }),
+  getById: (id: number) => apiClient.get<CostCenter>(`/partners/cost-centers/${id}`),
+  getByCode: (code: string) => apiClient.get<CostCenter>(`/partners/cost-centers/code/${code}`),
+  create: (data: CostCenter) => apiClient.post<CostCenter>('/partners/cost-centers', data),
+  update: (id: number, data: CostCenter) => apiClient.put<CostCenter>(`/partners/cost-centers/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/partners/cost-centers/${id}`),
 };
 
 export const documentTypeService = {
   getAll: (params?: { is_active?: boolean; category?: string }) =>
-    apiClient.get<DocumentType[]>('/document-types', { params }),
-  getById: (id: number) => apiClient.get<DocumentType>(`/document-types/${id}`),
+    apiClient.get<DocumentType[]>('/settings/document-types', { params }),
+  getById: (id: number) => apiClient.get<DocumentType>(`/settings/document-types/${id}`),
 };

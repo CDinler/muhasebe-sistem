@@ -42,6 +42,15 @@ class ContactRepository:
         
         return query.offset(skip).limit(limit).all()
     
+    def count(self, is_active: bool = True, contact_type: Optional[str] = None) -> int:
+        """Cari sayısını döndür"""
+        query = self.db.query(Contact).filter(Contact.is_active == is_active)
+        
+        if contact_type:
+            query = query.filter(Contact.contact_type == contact_type)
+        
+        return query.count()
+    
     def search(
         self,
         search_text: str,

@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from app.domains.accounting.transactions.repository import transaction_repo
-from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.models import Transaction, TransactionLine
+from app.domains.accounting.transactions.schemas import TransactionCreate, TransactionResponse
+from app.utils.transaction_numbering import get_next_transaction_number
 
 
 class TransactionService:
@@ -83,16 +84,39 @@ class TransactionService:
         transaction_data: TransactionCreate
     ) -> Transaction:
         """Yeni fiş oluştur (satırlarıyla birlikte)"""
-        # Fiş numarası kontrolü
-        existing = self.repo.get_by_number(db, transaction_data.transaction_number)
-        if existing:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Fiş numarası zaten mevcut: {transaction_data.transaction_number}"
-            )
+        # Fiş numarası boşsa otomatik üret
+        if not transaction_data.transaction_number or transaction_data.transaction_number.strip() == "":
+            transaction_data.transaction_number = get_next_transaction_number(db, prefix="F")
+        else:
+            # Fiş numarası kontrolü
+            existing = self.repo.get_by_number(db, transaction_data.transaction_number)
+            if existing:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Fiş numarası zaten mevcut: {transaction_data.transaction_number}"
+                )
         
-        # Transaction oluştur
-        return self.repo.create(db, obj_in=transaction_data)
+        # Lines'ı ayır
+        lines_data = transaction_data.lines
+        transaction_dict = transaction_data.dict(exclude={'lines'})
+        
+        # Transaction oluştur (lines olmadan)
+        transaction = Transaction(**transaction_dict)
+        db.add(transaction)
+        db.flush()  # ID almak için
+        
+        # Lines ekle
+        for line_data in lines_data:
+            line_dict = line_data.dict() if hasattr(line_data, 'dict') else line_data
+            line = TransactionLine(
+                transaction_id=transaction.id,
+                **line_dict
+            )
+            db.add(line)
+        
+        db.commit()
+        db.refresh(transaction)
+        return transaction
     
     def update_transaction(
         self,
@@ -105,16 +129,51 @@ class TransactionService:
         if not transaction:
             raise HTTPException(status_code=404, detail="Fiş bulunamadı")
         
-        return self.repo.update(db, db_obj=transaction, obj_in=transaction_data)
+        # Extract lines data before update
+        lines_data = transaction_data.lines if hasattr(transaction_data, 'lines') else []
+        transaction_dict = transaction_data.dict(exclude={'lines'})
+        
+        # Update transaction header fields
+        for field, value in transaction_dict.items():
+            if value is not None:
+                setattr(transaction, field, value)
+        
+        # Delete existing lines
+        db.query(TransactionLine).filter(TransactionLine.transaction_id == id).delete()
+        
+        # Create new lines
+        for line_data in lines_data:
+            line_dict = line_data if isinstance(line_data, dict) else line_data.dict()
+            line = TransactionLine(
+                transaction_id=id,
+                **line_dict
+            )
+            db.add(line)
+        
+        db.commit()
+        db.refresh(transaction)
+        return transaction
     
     def delete_transaction(self, db: Session, id: int) -> bool:
         """Fiş sil (cascade satırları da siler)"""
+        from app.models import TransactionLine
+        
         transaction = self.repo.get(db, id)
         if not transaction:
             raise HTTPException(status_code=404, detail="Fiş bulunamadı")
         
-        self.repo.delete(db, id=id)
-        return True
+        try:
+            # Manuel silme - önce satırlar, sonra fiş
+            db.query(TransactionLine).filter(TransactionLine.transaction_id == id).delete()
+            db.query(Transaction).filter(Transaction.id == id).delete()
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Fiş silinirken hata oluştu: {str(e)}"
+            )
 
 
 # Singleton instance

@@ -13,8 +13,8 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
   /**
    * Maliyet merkezlerini listele
    */
-  async getList(params?: CostCenterListParams): Promise<CostCenter[]> {
-    const response = await this.client.get<CostCenter[]>('/', { params });
+  async getList(params?: CostCenterListParams): Promise<{ items: CostCenter[]; total: number }> {
+    const response = await this.client.get<{ items: CostCenter[]; total: number }>(this.endpoint, { params });
     return response.data;
   }
 
@@ -22,7 +22,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Tüm aktif maliyet merkezlerini getir
    */
   async getAllActive(): Promise<CostCenter[]> {
-    const response = await this.client.get<CostCenter[]>('/active');
+    const response = await this.client.get<CostCenter[]>(`${this.endpoint}/active`);
     return response.data;
   }
 
@@ -30,7 +30,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Tek maliyet merkezi getir
    */
   async getById(id: number): Promise<CostCenter> {
-    const response = await this.client.get<CostCenter>(`/${id}`);
+    const response = await this.client.get<CostCenter>(`${this.endpoint}/${id}`);
     return response.data;
   }
 
@@ -38,7 +38,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Koda göre maliyet merkezi getir
    */
   async getByCode(code: string): Promise<CostCenter> {
-    const response = await this.client.get<CostCenter>(`/code/${code}`);
+    const response = await this.client.get<CostCenter>(`${this.endpoint}/code/${code}`);
     return response.data;
   }
 
@@ -46,7 +46,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Yeni maliyet merkezi oluştur
    */
   async create(data: CostCenterCreateRequest): Promise<CostCenter> {
-    const response = await this.client.post<CostCenter>('/', data);
+    const response = await this.client.post<CostCenter>(`${this.endpoint}/`, data);
     return response.data;
   }
 
@@ -54,7 +54,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Maliyet merkezi güncelle
    */
   async update(id: number, data: CostCenterCreateRequest): Promise<CostCenter> {
-    const response = await this.client.put<CostCenter>(`/${id}`, data);
+    const response = await this.client.put<CostCenter>(`${this.endpoint}/${id}`, data);
     return response.data;
   }
 
@@ -62,7 +62,7 @@ class CostCentersAPI extends CRUDService<CostCenter, CostCenterCreateRequest, Co
    * Maliyet merkezi sil (soft delete)
    */
   async delete(id: number): Promise<void> {
-    await this.client.delete(`/${id}`);
+    await this.client.delete(`${this.endpoint}/${id}`);
   }
 }
 

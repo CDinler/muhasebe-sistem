@@ -11,7 +11,7 @@ class PersonnelService:
     """Personnel business logic"""
     
     def create_personnel(self, db: Session, data: PersonnelCreate) -> Personnel:
-        """Create new personnel with validation"""
+        """Create new personnel with validation and auto account creation"""
         # Business rule: TC kimlik must be unique
         existing = personnel_repo.get_by_tc_kimlik_no(db, data.tc_kimlik_no)
         if existing:
@@ -25,7 +25,41 @@ class PersonnelService:
         if data.iban and not self._validate_iban(data.iban):
             raise ValidationException("Geçersiz IBAN formatı", "iban")
         
-        return personnel_repo.create(db, data)
+        # Auto-create account if not provided
+        if not data.accounts_id:
+            from app.models import Account
+            
+            acc_code = f"335.{data.tc_kimlik_no}"
+            acc_name = f"{data.ad} {data.soyad} {data.tc_kimlik_no}"
+            
+            # Check if account already exists
+            existing_account = db.query(Account).filter(Account.code == acc_code).first()
+            
+            if existing_account:
+                data.accounts_id = existing_account.id
+            else:
+                account = Account(
+                    code=acc_code,
+                    name=acc_name,
+                    account_type="BALANCE_SHEET",
+                    is_active=1
+                )
+                db.add(account)
+                db.flush()
+                data.accounts_id = account.id
+        
+        # Create personnel
+        personnel = personnel_repo.create(db, data)
+        
+        # Update account's personnel_id if account was created
+        if personnel.accounts_id:
+            from app.models import Account
+            account = db.query(Account).filter(Account.id == personnel.accounts_id).first()
+            if account and not account.personnel_id:
+                account.personnel_id = personnel.id
+                db.flush()
+        
+        return personnel
     
     def update_personnel(self, db: Session, personnel_id: int, data: PersonnelUpdate) -> Personnel:
         """Update personnel with validation"""

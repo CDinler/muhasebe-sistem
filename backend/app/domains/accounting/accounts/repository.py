@@ -1,6 +1,6 @@
 """Account repository"""
 from app.shared.base.repository import CRUDBase
-from app.models.account import Account
+from app.models import Account
 from pydantic import BaseModel
 
 class AccountCreate(BaseModel):

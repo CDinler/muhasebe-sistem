@@ -26,15 +26,24 @@ class CostCenterRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        is_active: bool = True
+        is_active: Optional[bool] = None
     ) -> List[CostCenter]:
         """Maliyet merkezlerini listele"""
-        query = self.db.query(CostCenter).filter(CostCenter.is_active == is_active)
+        query = self.db.query(CostCenter)
+        if is_active is not None:
+            query = query.filter(CostCenter.is_active == is_active)
         return query.offset(skip).limit(limit).all()
     
     def get_all_active(self) -> List[CostCenter]:
         """Tüm aktif maliyet merkezlerini getir"""
         return self.db.query(CostCenter).filter(CostCenter.is_active == True).all()
+    
+    def count(self, is_active: Optional[bool] = None) -> int:
+        """Maliyet merkezi sayısını döndür"""
+        query = self.db.query(CostCenter)
+        if is_active is not None:
+            query = query.filter(CostCenter.is_active == is_active)
+        return query.count()
     
     def create(self, cost_center_data: dict) -> CostCenter:
         """Yeni maliyet merkezi oluştur"""

@@ -638,7 +638,7 @@ class EInvoicePDFProcessor:
         
         if contact_vkn:
             from sqlalchemy import text
-            from app.models.contact import Contact
+            from app.models import Contact
             
             # Mevcut contact var mı?
             contact = self.db.execute(text("""
@@ -652,8 +652,9 @@ class EInvoicePDFProcessor:
                 print(f"📎 Contact eşleştirildi: ID {contact.id} ({contact_type})")
             elif contact_name:
                 # Yeni contact oluştur
-                from app.api.v1.endpoints.einvoices import generate_contact_code
-                new_code = generate_contact_code(self.db, 'supplier' if contact_type == 'SUPPLIER' else 'customer')
+                from app.domains.partners.contacts.service import ContactService
+                contact_service = ContactService(self.db)
+                new_code = contact_service.generate_contact_code('supplier' if contact_type == 'SUPPLIER' else 'customer')
                 
                 new_contact = Contact(
                     code=new_code,
@@ -723,7 +724,9 @@ class EInvoicePDFProcessor:
         if not einvoice.pdf_path:
             return None
         
-        return Path(settings.BASE_DIR) / einvoice.pdf_path
+        # pdf_path zaten relative path olarak saklanmış (örn: "2025/12/filename.pdf")
+        # PDF_ROOT ile birleştir
+        return self.PDF_ROOT / einvoice.pdf_path
     
     def validate_extracted_data(self, data: Dict) -> Tuple[bool, List[str]]:
         """

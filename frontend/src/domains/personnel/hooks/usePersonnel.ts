@@ -8,7 +8,7 @@ import { message } from 'antd';
 
 const PERSONNEL_QUERY_KEY = 'personnel';
 
-export function usePersonnel(params?: { skip?: number; limit?: number; search?: string }) {
+export function usePersonnel(params?: { skip?: number; limit?: number; search?: string; year_filter?: number; month_filter?: number }) {
   return useQuery({
     queryKey: [PERSONNEL_QUERY_KEY, params],
     queryFn: () => personnelAPI.getAll(params),

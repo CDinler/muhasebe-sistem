@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
       formData.append('password', values.password);
 
       const response = await axios.post(
-        'http://127.0.0.1:8000/api/v1/auth/login',
+        'http://127.0.0.1:8000/api/v2/auth/login',
         formData,
         {
           headers: {
@@ -34,7 +34,10 @@ const LoginPage: React.FC = () => {
       navigate('/');
     } catch (error: any) {
       console.error('Login error:', error);
-      message.error(error.response?.data?.detail || 'Giriş başarısız');
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      const errorMsg = error.response?.data?.detail || 'Giriş başarısız. Kullanıcı adı veya şifre hatalı.';
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }

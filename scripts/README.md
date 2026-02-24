@@ -1,49 +1,30 @@
 # Scripts Dizini
 
-Proje yönetimi ve bakım scriptleri
+Bu dizin artık temizlenmiştir. Tüm geçici geliştirme scriptleri silinmiştir.
 
-## 📂 Dizin Yapısı
+## 📋 Proje Yönetimi
 
-### `/tests` - Test Scriptleri
-Backend test scriptleri, unit testler ve integration testler
-- `test_*.py` - Çeşitli modül testleri
-- `quick_test.py` - Hızlı test scriptleri
+**Database Migrations:** 
+- `database/migrations/` klasöründe SQL migration dosyaları
+- `backend/alembic/` klasöründe Alembic Python migration'ları
 
-### `/analysis` - Analiz Scriptleri
-Veri analizi, kontrol ve raporlama scriptleri
-- `analyze_*.py` - Veri analiz scriptleri
-- `check_*.py` - Veri doğrulama ve kontrol scriptleri
+**Test Scriptleri:**
+- Backend test'leri için: `backend/tests/` klasörünü kullanın
+- Frontend test'leri için: `frontend/src/__tests__/` klasörünü kullanın
 
-### `/migrations` - Migration Scriptleri
-Veritabanı migration ve data migration scriptleri
-- `run_*.py` - Migration çalıştırıcıları
-- `add_*.py` - Yeni özellik ekleyiciler
-- `drop_*.py` - Kolon/tablo silme scriptleri
-- `migrate_*.py` - Data migration scriptleri
-- `*.sql` - SQL migration dosyaları
-- `full_reset.py` - Sistem sıfırlama
+**Bakım Scriptleri:**
+- İhtiyaç duyulan özel scriptler için bu klasörde yeni dosyalar oluşturabilirsiniz
+- Geliştirme sırasında kullanılan geçici scriptler buraya konulmamalıdır
 
-### `/utilities` - Utility Scriptleri
-Genel amaçlı yardımcı scriptler
-- `create_*.py` - Kayıt oluşturma scriptleri
-- `update_*.py` - Toplu güncelleme scriptleri
-- `fix_*.py` - Veri düzeltme scriptleri
-- `normalize_*.py` - Veri normalizasyon scriptleri
-- `export_*.py` - Veri export scriptleri
-- `import_*.py` - Veri import scriptleri
-- `debug_*.py` - Debug yardımcıları
-- `get_last_logs.ps1` - Log görüntüleyici
+## 🧹 Temizlik Notları
 
-## 🚀 Kullanım
+**Silinen klasörler:**
+- `/analysis` - 114 geçici analiz scripti
+- `/tests` - 47 geçici test scripti
+- `/migrations` - 25 eski migration scripti
+- `/utilities` - 114 geçici utility scripti
+- `/setup` - 5 PostgreSQL kurulum scripti
+- `/backup` - Boş klasör
+- `/deploy` - Boş klasör
 
-Backend dizininden çalıştırın:
-```bash
-cd backend
-python ../scripts/tests/test_*.py
-python ../scripts/migrations/run_*.py
-python ../scripts/utilities/fix_*.py
-```
-
-## ⚠️ Dikkat
-
-Migration scriptlerini production'da çalıştırmadan önce mutlaka backup alın!
+**Toplam:** ~305 geçici dosya temizlendi

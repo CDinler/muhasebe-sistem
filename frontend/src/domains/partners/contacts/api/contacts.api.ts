@@ -13,8 +13,8 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
   /**
    * Carileri listele
    */
-  async getList(params?: ContactListParams): Promise<Contact[]> {
-    const response = await this.client.get<Contact[]>('/', { params });
+  async getList(params?: ContactListParams): Promise<{ items: Contact[]; total: number }> {
+    const response = await this.client.get<{ items: Contact[]; total: number }>(this.endpoint, { params });
     return response.data;
   }
 
@@ -22,7 +22,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Tek cari getir
    */
   async getById(id: number): Promise<Contact> {
-    const response = await this.client.get<Contact>(`/${id}`);
+    const response = await this.client.get<Contact>(`${this.endpoint}/${id}`);
     return response.data;
   }
 
@@ -30,7 +30,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Vergi numarasına göre cari getir
    */
   async getByTaxNumber(taxNumber: string): Promise<Contact> {
-    const response = await this.client.get<Contact>(`/tax/${taxNumber}`);
+    const response = await this.client.get<Contact>(`${this.endpoint}/tax/${taxNumber}`);
     return response.data;
   }
 
@@ -38,7 +38,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Cari ara
    */
   async search(query: string, isActive: boolean = true): Promise<Contact[]> {
-    const response = await this.client.get<Contact[]>('/search', {
+    const response = await this.client.get<Contact[]>(`${this.endpoint}/search`, {
       params: { q: query, is_active: isActive }
     });
     return response.data;
@@ -48,7 +48,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Yeni cari oluştur
    */
   async create(data: ContactCreateRequest): Promise<Contact> {
-    const response = await this.client.post<Contact>('/', data);
+    const response = await this.client.post<Contact>(this.endpoint, data);
     return response.data;
   }
 
@@ -56,7 +56,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Cari güncelle
    */
   async update(id: number, data: ContactCreateRequest): Promise<Contact> {
-    const response = await this.client.put<Contact>(`/${id}`, data);
+    const response = await this.client.put<Contact>(`${this.endpoint}/${id}`, data);
     return response.data;
   }
 
@@ -64,7 +64,7 @@ class ContactsAPI extends CRUDService<Contact, ContactCreateRequest, ContactCrea
    * Cari sil (soft delete)
    */
   async delete(id: number): Promise<void> {
-    await this.client.delete(`/${id}`);
+    await this.client.delete(`${this.endpoint}/${id}`);
   }
 }
 

@@ -8,9 +8,11 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.domains.auth.dependencies import get_current_user
+from app.schemas.auth import UserInDB
 from .service import ConfigService
 
-router = APIRouter()
+router = APIRouter(tags=["System Config (V2)"])
 
 
 # Schemas
@@ -44,6 +46,7 @@ class TaxBracketUpdate(BaseModel):
 @router.get("/configs")
 def list_configs(
     category: Optional[str] = None,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Dict[str, List[Dict]]:
     """Tüm sistem konfigürasyonlarını kategorilere göre grupla"""
@@ -52,7 +55,11 @@ def list_configs(
 
 
 @router.get("/configs/{config_key}")
-def get_config(config_key: str, db: Session = Depends(get_db)):
+def get_config(
+    config_key: str,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Belirli bir config değerini getir"""
     service = ConfigService(db)
     config = service.get_config(config_key)
@@ -69,7 +76,11 @@ def get_config(config_key: str, db: Session = Depends(get_db)):
 
 
 @router.post("/configs", status_code=201)
-def create_config(config: SystemConfigCreate, db: Session = Depends(get_db)):
+def create_config(
+    config: SystemConfigCreate,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Yeni config oluştur"""
     service = ConfigService(db)
     try:
@@ -89,6 +100,7 @@ def create_config(config: SystemConfigCreate, db: Session = Depends(get_db)):
 def update_config(
     config_key: str,
     config: SystemConfigUpdate,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Config güncelle"""
@@ -107,7 +119,11 @@ def update_config(
 
 
 @router.delete("/configs/{config_id}", status_code=204)
-def delete_config(config_id: int, db: Session = Depends(get_db)):
+def delete_config(
+    config_id: int,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Config sil"""
     service = ConfigService(db)
     deleted = service.delete_config(config_id)
@@ -120,6 +136,7 @@ def delete_config(config_id: int, db: Session = Depends(get_db)):
 @router.get("/tax-brackets")
 def list_tax_brackets(
     year: Optional[int] = None,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Vergi dilimlerini listele"""
@@ -136,7 +153,11 @@ def list_tax_brackets(
 
 
 @router.post("/tax-brackets", status_code=201)
-def create_tax_bracket(bracket: TaxBracketCreate, db: Session = Depends(get_db)):
+def create_tax_bracket(
+    bracket: TaxBracketCreate,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Yeni vergi dilimi oluştur"""
     service = ConfigService(db)
     new_bracket = service.create_tax_bracket(bracket.model_dump())
@@ -154,6 +175,7 @@ def create_tax_bracket(bracket: TaxBracketCreate, db: Session = Depends(get_db))
 def update_tax_bracket(
     bracket_id: int,
     bracket: TaxBracketUpdate,
+    current_user: UserInDB = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Vergi dilimi güncelle"""
@@ -172,7 +194,11 @@ def update_tax_bracket(
 
 
 @router.delete("/tax-brackets/{bracket_id}", status_code=204)
-def delete_tax_bracket(bracket_id: int, db: Session = Depends(get_db)):
+def delete_tax_bracket(
+    bracket_id: int,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Vergi dilimi sil"""
     service = ConfigService(db)
     deleted = service.delete_tax_bracket(bracket_id)

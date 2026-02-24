@@ -4,7 +4,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { costCentersAPI } from '../api/cost-centers.api';
-import { CostCenter, CostCenterCreateRequest, CostCenterListParams } from '../types/cost-center.types';
+import { CostCenterCreateRequest, CostCenterListParams } from '../types/cost-center.types';
 import { message } from 'antd';
 
 // Query keys

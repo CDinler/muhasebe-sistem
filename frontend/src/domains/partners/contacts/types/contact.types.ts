@@ -9,7 +9,7 @@ export interface Contact {
   name: string;
   tax_number?: string;
   tax_office?: string;
-  contact_type?: 'customer' | 'supplier' | 'both';
+  contact_type?: 'Tedarikçi' | 'Taşeron' | 'Ana Firma' | 'İş Ortağı';
   is_active: boolean;
   
   // İletişim
@@ -58,7 +58,7 @@ export interface ContactCreateRequest {
   code?: string;
   tax_number?: string;
   tax_office?: string;
-  contact_type?: 'customer' | 'supplier' | 'both';
+  contact_type?: 'Tedarikçi' | 'Taşeron' | 'Ana Firma' | 'İş Ortağı';
   is_active?: boolean;
   
   phone?: string;
@@ -99,5 +99,5 @@ export interface ContactListParams {
   skip?: number;
   limit?: number;
   is_active?: boolean;
-  contact_type?: 'customer' | 'supplier' | 'both';
+  contact_type?: 'Tedarikçi' | 'Taşeron' | 'Ana Firma' | 'İş Ortağı';
 }

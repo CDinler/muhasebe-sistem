@@ -9,34 +9,37 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import AccountsPage from './pages/AccountsPage';
-import TransactionsPage from './pages/TransactionsPage';
-import TransactionDetailPage from './pages/TransactionDetailPage';
-import NewTransactionPage from './pages/NewTransactionPage';
-import ContactsPage from './pages/ContactsPage';
-import CostCentersPage from './pages/CostCentersPage';
-import ReportsPage from './pages/ReportsPage';
-import MuavinPage from './pages/MuavinPage';
-import EInvoicesPage from './pages/EInvoicesPage';
-import UnpaidInvoicesPage from './pages/UnpaidInvoicesPage';
-import InvoiceMatchingPage from './pages/InvoiceMatchingPage';
-import SystemConfigPage from './pages/SystemConfigPage';
-import LucaBordroPage from './pages/LucaBordroPage';
-import LucaSicilPage from './pages/LucaSicilPage_v2';
-import PersonnelContractsPage from './pages/PersonnelContractsPage';
-import BordroCalculationPage from './pages/BordroCalculationPage';
-import PersonnelPage from './pages/PersonnelPage';
-import PuantajPage from './pages/PuantajPage';
-import PuantajGridPage from './pages/PuantajGridPage';
+import AccountsPage from './domains/accounting/accounts/pages/AccountsPage';
+import TransactionsPage from './domains/accounting/transactions/pages/TransactionsPage';
+import TransactionDetailPage from './domains/accounting/transactions/pages/TransactionDetailPage';
+import NewTransactionPage from './domains/accounting/transactions/pages/NewTransactionPage';
+import ContactsPage from './domains/partners/contacts/pages/ContactsPage';
+import CostCentersPage from './domains/partners/cost_centers/pages/CostCentersPage';
+import ReportsPage from './domains/reporting/reports/pages/ReportsPage';
+import MuavinPage from './domains/accounting/transactions/pages/MuavinPage';
+import EInvoicesPage from './domains/invoicing/einvoices/pages/EInvoicesPage';
+import UnpaidInvoicesPage from './domains/invoicing/einvoices/pages/UnpaidInvoicesPage';
+import SystemConfigPage from './domains/settings/config/pages/SystemConfigPage';
+import LucaBordroUploadPage from './domains/personnel/payroll/pages/LucaBordroUploadPage';
+import LucaBordroListPage from './domains/personnel/payroll/pages/LucaBordroListPage';
+import MonthlyRecordsUploadPage from './domains/personnel/monthly-records/pages/MonthlyRecordsUploadPage';
+import MonthlyRecordsListPage from './domains/personnel/monthly-records/pages/MonthlyRecordsListPage';
+import PersonnelContractsPage from './domains/personnel/contracts/pages/PersonnelContractsPage';
+import BordroCalculationPage from './domains/personnel/payroll/pages/BordroCalculationPage';
+import BordroCalculationPageGrouped from './domains/personnel/payroll/pages/BordroCalculationPageGrouped';
+import PuantajPage from './domains/personnel/payroll/pages/PuantajPage';
+import PuantajGridPage from './domains/personnel/payroll/pages/PuantajGridPage';
+import UsersPage from './domains/settings/users/pages/UsersPage';
+import SettingsPage from './domains/settings/config/pages/SettingsPage';
 // NEW: Domain-based personnel page
 import { PersonnelPage as PersonnelPageV2 } from './domains/personnel/pages/PersonnelPage';
 
 function App() {
   return (
-    <ConfigProvider locale={trTR}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <ConfigProvider locale={trTR}>
+        <BrowserRouter>
+          <AuthProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route
@@ -57,26 +60,30 @@ function App() {
                 <Route path="cost-centers" element={<CostCentersPage />} />
                 <Route path="einvoices" element={<EInvoicesPage />} />
                 <Route path="einvoices/unpaid" element={<UnpaidInvoicesPage />} />
-                <Route path="invoice-matching" element={<InvoiceMatchingPage />} />
+
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="muavin" element={<MuavinPage />} />
                 <Route path="system-config" element={<SystemConfigPage />} />
-                <Route path="luca-bordro" element={<LucaBordroPage />} />
-                <Route path="luca-sicil" element={<LucaSicilPage />} />
+                <Route path="luca-bordro-upload" element={<LucaBordroUploadPage />} />
+                <Route path="luca-bordro-list" element={<LucaBordroListPage />} />
+                <Route path="monthly-records-upload" element={<MonthlyRecordsUploadPage />} />
+                <Route path="monthly-records-list" element={<MonthlyRecordsListPage />} />
                 <Route path="personnel-contracts" element={<PersonnelContractsPage />} />
                 <Route path="puantaj" element={<PuantajPage />} />
                 <Route path="puantaj-grid" element={<PuantajGridPage />} />
-                <Route path="bordro-calculation" element={<BordroCalculationPage />} />
+                <Route path="bordro-calculation" element={<BordroCalculationPageGrouped />} />
+                <Route path="bordro-calculation-old" element={<BordroCalculationPage />} />
                 {/* NEW: Use domain-driven personnel page */}
                 <Route path="personnel" element={<PersonnelPageV2 />} />
-                <Route path="settings" element={<div>Ayarlar (Yakında)</div>} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="settings" element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ConfigProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ConfigProvider>
+    </QueryClientProvider>
   );
 }
 

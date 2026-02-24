@@ -12,12 +12,11 @@ import {
   LogoutOutlined,
   BarChartOutlined,
   LinkOutlined,
-  DollarOutlined,
   SolutionOutlined,
   CalculatorOutlined,
-  CalendarOutlined,
   TableOutlined,
   ClockCircleOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -74,11 +73,6 @@ const AppLayout: React.FC = () => {
           icon: <ClockCircleOutlined />,
           label: 'Ödenmeyen Faturalar',
         },
-        {
-          key: '/invoice-matching',
-          icon: <LinkOutlined />,
-          label: 'Fatura Eşleştirme',
-        },
       ],
     },
     {
@@ -107,14 +101,24 @@ const AppLayout: React.FC = () => {
           label: 'Luca Entegrasyon',
           children: [
             {
-              key: '/luca-bordro',
-              icon: <FileTextOutlined />,
-              label: 'Luca Bordrolar',
+              key: '/luca-bordro-upload',
+              icon: <UploadOutlined />,
+              label: 'Bordro Excel Yükleme',
             },
             {
-              key: '/luca-sicil',
+              key: '/luca-bordro-list',
               icon: <FileTextOutlined />,
-              label: 'Luca Personel Sicil Kayıtları',
+              label: 'Bordro Listesi',
+            },
+            {
+              key: '/monthly-records-upload',
+              icon: <UploadOutlined />,
+              label: 'Aylık Sicil Yükleme',
+            },
+            {
+              key: '/monthly-records-list',
+              icon: <FileTextOutlined />,
+              label: 'Aylık Sicil Listesi',
             },
           ],
         },
@@ -146,9 +150,21 @@ const AppLayout: React.FC = () => {
       label: 'Raporlar',
     },
     {
-      key: '/settings',
+      key: 'yonetim',
       icon: <SettingOutlined />,
-      label: 'Ayarlar',
+      label: 'Yönetim',
+      children: [
+        {
+          key: '/users',
+          icon: <TeamOutlined />,
+          label: 'Kullanıcı Yönetimi',
+        },
+        {
+          key: '/settings',
+          icon: <SettingOutlined />,
+          label: 'Ayarlar',
+        },
+      ],
     },
   ];
 

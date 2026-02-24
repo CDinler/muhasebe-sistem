@@ -78,6 +78,7 @@ export interface CariReportItem {
   debit: number;
   credit: number;
   balance: number;
+  has_collateral?: boolean; // Bu fişte 326 hesabı var mı (nakit teminat)
 }
 
 export interface CariReport {

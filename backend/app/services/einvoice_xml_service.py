@@ -10,8 +10,8 @@ from typing import Dict, Optional, Tuple, List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from app.models.einvoice import EInvoice
-from app.models.contact import Contact
+from app.models import EInvoice
+from app.models import Contact
 
 
 # UBL-TR Namespace'leri
@@ -629,8 +629,9 @@ def create_einvoice_from_xml(db: Session, invoice_data: Dict) -> EInvoice:
                     existing.processing_status = 'MATCHED'
                 else:
                     # YENİ CARİ OLUŞTUR
-                    from app.api.v1.endpoints.einvoices import generate_contact_code
-                    new_code = generate_contact_code(db, 'supplier' if contact_type == 'SUPPLIER' else 'customer')
+                    from app.domains.partners.contacts.service import ContactService
+                    contact_service = ContactService(db)
+                    new_code = contact_service.generate_contact_code('supplier' if contact_type == 'SUPPLIER' else 'customer')
                     
                     new_contact = Contact(
                         code=new_code,
@@ -654,7 +655,7 @@ def create_einvoice_from_xml(db: Session, invoice_data: Dict) -> EInvoice:
                     existing.processing_status = 'MATCHED'
             
             # === VERGİ DETAYLARINI GÜNCELLE (ESKİLERİ SİL, YENİLERİ EKLE) ===
-            from app.models.invoice_tax import InvoiceTax
+            from app.models import InvoiceTax
             
             # Eski vergi kayıtlarını sil
             db.query(InvoiceTax).filter(InvoiceTax.einvoice_id == existing.id).delete()
@@ -822,8 +823,9 @@ def create_einvoice_from_xml(db: Session, invoice_data: Dict) -> EInvoice:
         else:
             # YENİ CARİ OLUŞTUR
             # Otomatik cari kodu üret
-            from app.api.v1.endpoints.einvoices import generate_contact_code
-            new_code = generate_contact_code(db, 'supplier' if contact_type == 'SUPPLIER' else 'customer')
+            from app.domains.partners.contacts.service import ContactService
+            contact_service = ContactService(db)
+            new_code = contact_service.generate_contact_code('supplier' if contact_type == 'SUPPLIER' else 'customer')
             
             # Yeni cari oluştur
             new_contact = Contact(
@@ -851,7 +853,7 @@ def create_einvoice_from_xml(db: Session, invoice_data: Dict) -> EInvoice:
     db.flush()  # ID'yi al
     
     # === VERGİ DETAYLARINI KAYDET ===
-    from app.models.invoice_tax import InvoiceTax
+    from app.models import InvoiceTax
     
     tax_details = invoice_data.get('tax_details', [])
     if tax_details:

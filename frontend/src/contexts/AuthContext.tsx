@@ -23,28 +23,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Geçici: Auth bypass - otomatik giriş
-    setUser({
-      id: 1,
-      username: 'admin',
-      full_name: 'Admin User',
-      role: 'admin'
-    });
-    setLoading(false);
-    
-    /* Token kontrolü - şimdilik kapalı
+    // Token kontrolü - token yoksa fetch yapma (geçici: auth devre dışı)
     const token = localStorage.getItem('token');
     if (token) {
       fetchUser(token);
     } else {
+      // Token yoksa direkt loading'i false yap, API çağrısı yapma
       setLoading(false);
     }
-    */
   }, []);
 
   const fetchUser = async (token: string) => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/v1/auth/me', {
+      const response = await axios.get('http://127.0.0.1:8000/api/v2/auth/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

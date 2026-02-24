@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.domains.invoicing.einvoices.repository import einvoice_repo
 from app.domains.invoicing.einvoices.models import EInvoice
-from app.schemas.einvoice import EInvoiceCreate, EInvoiceUpdate
+from app.domains.invoicing.einvoices.schemas import EInvoiceCreate, EInvoiceUpdate
 
 
 class EInvoiceService:
@@ -61,6 +61,28 @@ class EInvoiceService:
             sort_by=sort_by,
             sort_order=sort_order
         )
+    
+    def get_unpaid_invoices(
+        self,
+        db: Session,
+        *,
+        invoice_category: Optional[str] = 'incoming'
+    ) -> List[EInvoice]:
+        """
+        Ödenmeyen veya kısmi ödenmiş faturaları getir
+        
+        paid_amount < payable_amount olan faturaları döner
+        """
+        query = db.query(EInvoice).filter(
+            EInvoice.invoice_category == invoice_category,
+            EInvoice.payable_amount > 0
+        )
+        
+        # paid_amount'u kontrol et
+        invoices = query.all()
+        unpaid_invoices = [inv for inv in invoices if inv.paid_amount < inv.payable_amount]
+        
+        return unpaid_invoices
     
     def get_by_id(self, db: Session, invoice_id: int) -> Optional[EInvoice]:
         """ID ile fatura getir"""

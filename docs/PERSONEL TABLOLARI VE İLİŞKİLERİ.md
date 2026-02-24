@@ -11,7 +11,7 @@
 	5	accounts_id		----->	table[accounts][id]
 	6	iban			----->	_POST ['iban']
 
-
+Personel Adı Soyadı, tc_kimlik_no, ise_giris_tarihi, isten_cikis_tarihi, bolum,cost_center_name, departman, taseron_name, 
 
 -------------------------------------------
 # table [personnel_contracts]
@@ -43,7 +43,7 @@
 	calisma_takvimi;
 		atipi- PAZAR TATİL 08:00-17:00 (ucret_nevi, aylik ve maaş2 var ise varsayılan olarak bu seçili olacak; ucret_nevi, sabit aylik ise otomatik olarak bu seçili olacak)
 		btipi- HER GÜN 08:00-17:00 (ucret_nevi, günlük ise otomatik olarak bu seçili olacak; ucret_nevi, aylik ve taseron 1 ise varsayılan olarak bu seçili olacak)
-		ctipi- TAKVİM YOK (ucret_nevi, aylik ve maaş2 yok ise varsayılan olarak bu seçili olacak)
+		ctipi- TAKVİM YOK (ucret_nevi, aylik ve maaş2 yok ve taşeron 0 ise varsayılan olarak bu seçili olacak)
 	```
 	def calisma_takvimi_kisa(ucret_nevi, maas2_tutar=None, taseron=None):
 	
@@ -224,9 +224,8 @@
 	from datetime import datetime
 
 	# Şu anki tarihin ayı için
-	simdi = datetime.now()
-	yil = simdi.year
-	ay = simdi.month
+	yil = table [personnel_puantaj_grid][yil]
+	ay = table [personnel_puantaj_grid][ay]
 
 	ayin_toplam_gun_sayisi = calendar.monthrange(yil, ay)[1]
 	```
@@ -239,7 +238,7 @@
 	var eksik_gun_sayisi		= TABLO SATIRINDAKİ TOPLAM ('E') SAYISI
 	var fazla_calismasi			= toplam (fazla mesai saatleri)
 	var tatil_calismasi			= TABLO SATIRINDAKİ TOPLAM ('M') SAYISI
-	var sigorta_girmedigi		= TABLO SATIRINDAKİ TOPLAM ('-') SAYISI
+	var sigorta_girmedigi		= TABLO SATIRINDAKİ TOPLAM (Disable sütunlar) SAYISI
 	var hafta_tatili			= TABLO SATIRINDAKİ TOPLAM ('H') SAYISI
 	var resmi_tatil				= TABLO SATIRINDAKİ TOPLAM ('T') SAYISI
 	
@@ -294,7 +293,7 @@
 	18	g_v_m				----->
 	19	gel_ver				----->
 	20	damga_v				----->
-	21	oz_kesinti			----->
+	21	ozel_kesinti		----->
 	22	n_odenen			----->
 	23	isveren_maliyeti	----->
 	24	ssk_isveren			----->
@@ -305,38 +304,11 @@
 	29	icra				----->
 	30	avans				----->
 
--------------------------------------------
-# table [monthly_puantaj]
--------------------------------------------
-
-#	Adı								Türü			Karşılaştırma	Öznitelikler	Boş		Varsayılan			Açıklamalar	Ekstra
-1	id 				BirincilIndex	int(11)											Hayır	Yok								AUTO_INCREMENT
-2	yil 			Index			int(11)											Hayır	Yok		
-3	ay 				Index			int(11)											Hayır	Yok		
-4	donem 			Index			varchar(7)		utf8mb4_unicode_ci				Hayır	Yok		
-5	personnel_id 	Index			int(11)											Hayır	Yok		
-6	contract_id 	Index			int(11)											Evet	NULL		
-7	cost_center_id 	Index			int(11)											Evet	NULL		
-8	tckn 			Index			varchar(11)		utf8mb4_unicode_ci				Hayır	Yok		
-9	adi_soyadi						varchar(200)	utf8mb4_unicode_ci				Hayır	Yok				
-10	normal_gun						decimal(5,2)									Evet	NULL		
-11	fazla_mesai_saat				decimal(7,2)									Evet	NULL		
-12	tatil_mesai_gun					decimal(5,2)									Evet	NULL		
-13	yillik_izin_gun					decimal(5,2)									Evet	NULL		
-14	rapor_gun						decimal(5,2)									Evet	NULL		
-15	hafta_tatili_gun				decimal(5,2)									Evet	NULL		
-16	toplam_gun						decimal(5,2)									Evet	NULL		
-17	upload_date						timestamp										Evet	current_timestamp()		
-18	file_name						varchar(500)	utf8mb4_unicode_ci				Evet	NULL		
-19	is_processed					int(11)											Evet	NULL		
-20	notes							varchar(500)	utf8mb4_unicode_ci				Evet	NULL		
-21	created_at						timestamp										Evet	current_timestamp()		
-22	updated_at						timestamp										Evet	current_timestamp()		
 
 	
 
 
-# TABLO GÜNCELLELERİ
+# TABLO GÜNCELLEMELERİ
 
 -------------------------------------------
 # table [monthly_personnel_records] yükleme
@@ -788,7 +760,7 @@ var mpr_personnel_id ----->	FORMÜL( mpr_tc_kimlik_no değerini table [personnel
 	var bes_kesinti_acc_id 		= 735
 	var icra_kesinti_acc_id 	= 736
 	var haz_kat_payi_acc_id		= 744
-
+	var pe_accounts_id			= personel tablosu accounts_id
 	
 	* transaction_lines diğer bordro hesaplamaları
 	
@@ -1073,7 +1045,7 @@ var mpr_personnel_id ----->	FORMÜL( mpr_tc_kimlik_no değerini table [personnel
 	var tr_elden_kalan_yuvarlanmis = tr_elden_kalan 'ın 100 'e yuvarlanması ile elde edilir.
 	
 	var tr_elden_yuvarlamasi = tr_elden_kalan - tr_elden_kalan_yuvarlanmis
-
+	
 	
 	Eğer tr_elden_yuvarlamasi > 0 ise ;
 	
@@ -1780,79 +1752,3 @@ var mpr_personnel_id ----->	FORMÜL( mpr_tc_kimlik_no değerini table [personnel
 	
 	
 	
-	5535 740.00100
-	5556 770.00100
-
-	      BORÇ: 740.00100 - İşçi Ücret ve Giderleri
-        - Net Ödenen
-        - İcra, BES, Avans
-        - Gelir Vergisi, Damga Vergisi
-        - SSK İşçi, İşsizlik İşçi
-        - SSK İşveren, İşsizlik İşveren
-      102.00001 - Kuveytturk Hesap No:8934435,Ek No:1
-      ALACAK:
-        - 335.XXXXX BES
-		- 335.XXXXX İcra
-		- 335.XXXXX Net Ödenen)
-		- 335.XXXXX Avans
-		- 196.00001 Bankadan Ödenen Avans
-        - 361.00001 (SSK İşçi)
-        - 361.00002 (SSK İşveren)
-        - 361.00003 (İşsizlik İşçi)
-        - 361.00004 (İşsizlik İşveren)
-        - 369.00001 (BES)
-        - 369.00002 (İcra)
-        - 196 (Avans)
-        - 360.00004 (Gelir Vergisi)
-        - 360.00005 (Damga Vergisi)
-        - 602.00003 (SSK Teşviki - varsa)
-		
-		Net Ödenen
-		İcra	
-		Bes	
-		Avans
-		Gelir Vergisi	
-		Damga Vergisi	
-		Ssk İşçi Payı	
-		İşsizlik Sigortası İşçi Payı
-		Ssk İşveren Payı	
-		İşsizlik Sigortası İşveren Payı	
-		Elden Ücretler
-		
-		ssk_m				----->excel [luca_bordro] [[SSK M.]
-ssk_isci			----->excel [luca_bordro] [[SSK İşçi]
-iss_p_isci			----->excel [luca_bordro] [[İşs.P.İşçi]
-g_v_m				----->excel [luca_bordro] [[G.V.M]
-gel_ver				----->excel [luca_bordro] [[Gel.Ver.]
-damga_v				----->excel [luca_bordro] [[Damga V]
-oz_kesinti			----->excel [luca_bordro] [[Öz.Kesinti]
-n_odenen			----->excel [luca_bordro] [[N.Ödenen]
-isveren_maliyeti	----->excel [luca_bordro] [[İşveren Maliyeti]
-ssk_isveren			----->excel [luca_bordro] [[SSK İşveren]
-iss_p_isveren		----->excel [luca_bordro] [[İşs.P.İşveren]
-kanun				----->excel [luca_bordro] [[Kanun]
-ssk_tesviki			----->excel [luca_bordro] [[SSK Teşviki]
-oto_kat_bes			----->excel [luca_bordro] [[Oto.Kat.BES]
-icra				----->excel [luca_bordro] [[icra]
-avans				----->excel [luca_bordro] [[Avans]
-imza	
-
-
-
-
-728 360.00004 Gelir Vergisi
-729 360.00005 Damga Vergisi
-731 361.00001 İşçi SSK Payı
-732 361.00002 İşveren SSK Payı
-733 361.00003 İşçi İşsizlik Sigortası Payı
-734 361.00004 İşveren İşsizlik Sigortası Payı
-735 369.00001 BES Kesintileri
-
-var g_vergi_acc_id = 728
-var d_vergi_acc_id = 729
-var sgk_isci_prim_acc_id = 731
-var sgk_isveren_prim_acc_id = 732
-var sgk_isci_isz_acc_id = 733
-var sgk_isveren_isz_acc_id = 734
-var bes_kesinti_acc_id = 735
-var icra_kesinti_acc_id = 736

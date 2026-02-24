@@ -5,7 +5,7 @@ export const updateEInvoice = async (id: number, data: Partial<EInvoice>): Promi
 };
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000/api/v1/einvoices';
+const API_URL = 'http://127.0.0.1:8000/api/v2/invoicing/einvoices';
 
 export interface EInvoice {
   id: number;
@@ -67,8 +67,6 @@ export interface EInvoice {
   transaction_id?: number;
   cost_center_id?: number;
   xml_file_path?: string;
-  total_tax_amount?: number;
-  withholding_tax_amount?: number;
   raw_data?: any;
   invoice_lines?: InvoiceLine[];  // XML'den parse edilen satırlar
   tax_details?: TaxDetail[];  // Vergi detayları (UBL-TR TaxSubtotal)

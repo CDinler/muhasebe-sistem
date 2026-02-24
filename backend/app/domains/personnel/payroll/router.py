@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.domains.personnel.payroll.service import payroll_service
-from app.models.payroll_calculation import PayrollCalculation
+from app.models import PayrollCalculation
 
 router = APIRouter()
 

@@ -1,4 +1,4 @@
-﻿﻿# Frontend Başlatma Scripti
+﻿﻿﻿# Frontend Başlatma Scripti
 
 Set-Location C:\Projects\muhasebe-sistem\frontend
 

@@ -9,9 +9,8 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, or_, and_
 
 from app.shared.base.repository import CRUDBase
-from app.models.transaction import Transaction
-from app.models.transaction_line import TransactionLine
-from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.domains.accounting.transactions.models import Transaction, TransactionLine
+from app.domains.accounting.transactions.schemas import TransactionCreate, TransactionResponse
 
 
 class TransactionRepository(CRUDBase[Transaction, TransactionCreate, TransactionResponse]):
@@ -25,8 +24,7 @@ class TransactionRepository(CRUDBase[Transaction, TransactionCreate, Transaction
                 joinedload(Transaction.lines).joinedload(TransactionLine.account),
                 joinedload(Transaction.lines).joinedload(TransactionLine.contact),
                 joinedload(Transaction.cost_center),
-                joinedload(Transaction.doc_type),
-                joinedload(Transaction.doc_subtype)
+                joinedload(Transaction.doc_type)
             )
             .filter(Transaction.id == id)
             .first()
@@ -94,8 +92,14 @@ class TransactionRepository(CRUDBase[Transaction, TransactionCreate, Transaction
         # Apply ordering
         if order_by == 'date_asc':
             query = query.order_by(Transaction.transaction_date.asc(), Transaction.id.asc())
-        else:  # default to date_desc
+        elif order_by == 'date_desc':
             query = query.order_by(desc(Transaction.transaction_date), desc(Transaction.id))
+        elif order_by == 'number_asc':
+            query = query.order_by(Transaction.transaction_number.asc())
+        elif order_by == 'number_desc':
+            query = query.order_by(desc(Transaction.transaction_number))
+        else:  # default to number_desc
+            query = query.order_by(desc(Transaction.transaction_number))
         
         return (
             query

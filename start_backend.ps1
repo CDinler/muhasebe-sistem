@@ -27,20 +27,21 @@ Write-Host "══════════════════════�
 
 # Python ve uvicorn kontrolü
 Write-Host "🔍 Python kontrolü..." -ForegroundColor Gray
-$pythonVersion = python --version 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ HATA: Python bulunamadı!" -ForegroundColor Red
-    Write-Host "   Python yüklü olduğundan emin olun." -ForegroundColor Yellow
+$pythonPath = "..\\.venv\Scripts\python.exe"
+if (-not (Test-Path $pythonPath)) {
+    Write-Host "❌ HATA: Virtual environment bulunamadı!" -ForegroundColor Red
+    Write-Host "   .venv klasörü eksik. Proje root klasöründe olmalı." -ForegroundColor Yellow
     pause
     exit 1
 }
+$pythonVersion = & $pythonPath --version 2>&1
 Write-Host "✅ $pythonVersion" -ForegroundColor Green
 
 Write-Host "🔍 uvicorn kontrolü..." -ForegroundColor Gray
-python -c "import uvicorn" 2>&1 | Out-Null
+& $pythonPath -c "import uvicorn" 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ HATA: uvicorn modülü bulunamadı!" -ForegroundColor Red
-    Write-Host "   Yüklemek için: pip install uvicorn" -ForegroundColor Yellow
+    Write-Host "   Yüklemek için: .\.venv\Scripts\pip install uvicorn" -ForegroundColor Yellow
     pause
     exit 1
 }
@@ -50,7 +51,7 @@ Write-Host "`n▶️  Backend başlatılıyor...`n" -ForegroundColor Cyan
 
 # Backend'i başlat
 try {
-    python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8000
+    & $pythonPath -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8000
 } catch {
     Write-Host "`n❌ HATA: Backend başlatılamadı!" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Yellow

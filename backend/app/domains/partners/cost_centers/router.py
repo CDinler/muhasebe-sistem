@@ -4,36 +4,48 @@ FastAPI endpoints for cost centers
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
-from app.schemas.cost_center import CostCenterCreate, CostCenterResponse
+from app.domains.auth.dependencies import get_current_user
+from app.schemas.auth import UserInDB
+from app.domains.partners.cost_centers.schemas import CostCenterCreate, CostCenterResponse
 from .service import CostCenterService
 
-router = APIRouter()
+router = APIRouter(tags=["Cost Centers (V2)"])
 
 
-@router.get("/", response_model=List[CostCenterResponse])
+@router.get("/")
 def list_cost_centers(
     skip: int = 0,
     limit: int = 10000,
-    is_active: bool = True,
+    is_active: Optional[bool] = None,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
     db: Session = Depends(get_db)
 ):
     """Maliyet merkezlerini listele"""
     service = CostCenterService(db)
-    return service.list_cost_centers(skip=skip, limit=limit, is_active=is_active)
+    items = service.list_cost_centers(skip=skip, limit=limit, is_active=is_active)
+    total = service.count_cost_centers(is_active=is_active)
+    return {"items": items, "total": total}
 
 
 @router.get("/active", response_model=List[CostCenterResponse])
-def get_all_active(db: Session = Depends(get_db)):
+def get_all_active(
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
+    db: Session = Depends(get_db)
+):
     """Tüm aktif maliyet merkezlerini getir"""
     service = CostCenterService(db)
     return service.get_all_active()
 
 
 @router.get("/{cost_center_id}", response_model=CostCenterResponse)
-def get_cost_center(cost_center_id: int, db: Session = Depends(get_db)):
+def get_cost_center(
+    cost_center_id: int,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
+    db: Session = Depends(get_db)
+):
     """Tek maliyet merkezi detayı"""
     service = CostCenterService(db)
     cost_center = service.get_cost_center(cost_center_id)
@@ -43,7 +55,11 @@ def get_cost_center(cost_center_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/code/{code}", response_model=CostCenterResponse)
-def get_by_code(code: str, db: Session = Depends(get_db)):
+def get_by_code(
+    code: str,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
+    db: Session = Depends(get_db)
+):
     """Koda göre maliyet merkezi getir"""
     service = CostCenterService(db)
     cost_center = service.get_by_code(code)
@@ -53,7 +69,11 @@ def get_by_code(code: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=CostCenterResponse, status_code=201)
-def create_cost_center(cost_center: CostCenterCreate, db: Session = Depends(get_db)):
+def create_cost_center(
+    cost_center: CostCenterCreate,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
+    db: Session = Depends(get_db)
+):
     """Yeni maliyet merkezi oluştur"""
     service = CostCenterService(db)
     try:
@@ -66,6 +86,7 @@ def create_cost_center(cost_center: CostCenterCreate, db: Session = Depends(get_
 def update_cost_center(
     cost_center_id: int,
     cost_center: CostCenterCreate,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
     db: Session = Depends(get_db)
 ):
     """Maliyet merkezi güncelle"""
@@ -80,7 +101,11 @@ def update_cost_center(
 
 
 @router.delete("/{cost_center_id}", status_code=204)
-def delete_cost_center(cost_center_id: int, db: Session = Depends(get_db)):
+def delete_cost_center(
+    cost_center_id: int,
+    # current_user: UserInDB = Depends(get_current_user),  # TODO: Re-enable auth
+    db: Session = Depends(get_db)
+):
     """Maliyet merkezi sil (soft delete)"""
     service = CostCenterService(db)
     deleted = service.delete_cost_center(cost_center_id)

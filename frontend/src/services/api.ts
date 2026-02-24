@@ -1,11 +1,28 @@
 ﻿import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: 'http://localhost:8000/api/v2',
   headers: {
     'Content-Type': 'application/json; charset=UTF-8',
     'Accept': 'application/json',
   },
+  paramsSerializer: {
+    serialize: (params) => {
+      // FastAPI için array parametrelerini doğru formatta gönder
+      // account_filter: ['120', '320'] -> account_filter=120&account_filter=320
+      const parts: string[] = [];
+      Object.entries(params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(item)}`);
+          });
+        } else if (value !== undefined && value !== null) {
+          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+        }
+      });
+      return parts.join('&');
+    }
+  }
 });
 
 // Request interceptor
@@ -32,4 +49,5 @@ apiClient.interceptors.response.use(
   }
 );
 
+export { apiClient };
 export default apiClient;

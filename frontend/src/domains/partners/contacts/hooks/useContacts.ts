@@ -4,7 +4,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contactsAPI } from '../api/contacts.api';
-import { Contact, ContactCreateRequest, ContactListParams } from '../types/contact.types';
+import { ContactCreateRequest, ContactListParams } from '../types/contact.types';
 import { message } from 'antd';
 
 // Query keys

@@ -2,8 +2,10 @@
  * Personnel Page - Clean composition, business logic in hooks
  */
 import React, { useState } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Card } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Space, Card, Select } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, FileTextOutlined } from '@ant-design/icons';
+import { PersonnelReportModal } from '@/domains/reporting/reports/components/PersonnelReportModal';
+import dayjs from 'dayjs';
 import {
   usePersonnel,
   useCreatePersonnel,
@@ -12,16 +14,26 @@ import {
 } from '../hooks/usePersonnel';
 import { Personnel, PersonnelCreate, PersonnelUpdate } from '../types/personnel.types';
 
+const { Option } = Select;
+
 export const PersonnelPage: React.FC = () => {
   const [form] = Form.useForm();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+  const [selectedMonth, setSelectedMonth] = useState<number | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPersonnel, setEditingPersonnel] = useState<Personnel | null>(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedPersonnelForReport, setSelectedPersonnelForReport] = useState<any>(null);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 50 });
 
   // Hooks - All business logic here
   const { data: personnelData, isLoading } = usePersonnel({
     search: searchTerm,
-    limit: 1000,
+    year_filter: selectedYear,
+    month_filter: selectedMonth,
+    skip: (pagination.current - 1) * pagination.pageSize,
+    limit: pagination.pageSize,
   });
   const createMutation = useCreatePersonnel();
   const updateMutation = useUpdatePersonnel();
@@ -94,21 +106,37 @@ export const PersonnelPage: React.FC = () => {
       title: 'İşlemler',
       key: 'actions',
       fixed: 'right' as const,
-      width: 120,
+      width: 130,
       render: (_: any, record: Personnel) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          />
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-          />
-        </Space>
+        <Select
+          style={{ width: 130 }}
+          placeholder="İşlemler"
+          onSelect={(value) => {
+            if (value === 'report') {
+              setSelectedPersonnelForReport({
+                tc_kimlik_no: record.tc_kimlik_no,
+                ad: record.ad,
+                soyad: record.soyad,
+                id: record.id
+              });
+              setReportModalVisible(true);
+            } else if (value === 'edit') {
+              handleEdit(record);
+            } else if (value === 'delete') {
+              handleDelete(record.id);
+            }
+          }}
+        >
+          <Select.Option value="report">
+            <FileTextOutlined style={{ marginRight: 6, color: '#1890ff' }} /> <span>Rapor</span>
+          </Select.Option>
+          <Select.Option value="edit">
+            <EditOutlined style={{ marginRight: 6, color: '#fa8c16' }} /> <span>Düzenle</span>
+          </Select.Option>
+          <Select.Option value="delete">
+            <DeleteOutlined style={{ marginRight: 6, color: '#ff4d4f' }} /> <span>Sil</span>
+          </Select.Option>
+        </Select>
       ),
     },
   ];
@@ -118,6 +146,43 @@ export const PersonnelPage: React.FC = () => {
       title="Personel Yönetimi"
       extra={
         <Space>
+          <Select
+            placeholder="Yıl Seç (Çalışma Yılı)"
+            allowClear
+            value={selectedYear}
+            onChange={(year) => {
+              setSelectedYear(year);
+              if (!year) setSelectedMonth(undefined); // Yıl kaldırılınca ay'ı da temizle
+            }}
+            style={{ width: 150 }}
+          >
+            {Array.from({ length: 10 }, (_, i) => {
+              const year = dayjs().year() - i; // İleriye değil geriye doğru
+              return <Option key={year} value={year}>{year}</Option>;
+            })}
+          </Select>
+          <Select
+            placeholder="Ay Seç"
+            allowClear
+            value={selectedMonth}
+            onChange={setSelectedMonth}
+            disabled={!selectedYear}
+            style={{ width: 120 }}
+          >
+            <Option value={undefined}>Tümü</Option>
+            <Option value={1}>Ocak</Option>
+            <Option value={2}>Şubat</Option>
+            <Option value={3}>Mart</Option>
+            <Option value={4}>Nisan</Option>
+            <Option value={5}>Mayıs</Option>
+            <Option value={6}>Haziran</Option>
+            <Option value={7}>Temmuz</Option>
+            <Option value={8}>Ağustos</Option>
+            <Option value={9}>Eylül</Option>
+            <Option value={10}>Ekim</Option>
+            <Option value={11}>Kasım</Option>
+            <Option value={12}>Aralık</Option>
+          </Select>
           <Input
             placeholder="TC, Ad veya Soyad ile ara..."
             prefix={<SearchOutlined />}
@@ -141,9 +206,15 @@ export const PersonnelPage: React.FC = () => {
         rowKey="id"
         loading={isLoading}
         pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
           total: personnelData?.total || 0,
-          pageSize: 1000,
           showTotal: (total) => `Toplam ${total} personel`,
+          showSizeChanger: true,
+          pageSizeOptions: ['20', '50', '100', '200'],
+          onChange: (page, pageSize) => {
+            setPagination({ current: page, pageSize: pageSize || 50 });
+          },
         }}
         scroll={{ x: 1000 }}
       />
@@ -203,6 +274,15 @@ export const PersonnelPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
-  );
+
+    <PersonnelReportModal
+      visible={reportModalVisible}
+      personnel={selectedPersonnelForReport}
+      onClose={() => {
+        setReportModalVisible(false);
+        setSelectedPersonnelForReport(null);
+      }}
+    />
+  </Card>
+);
 };

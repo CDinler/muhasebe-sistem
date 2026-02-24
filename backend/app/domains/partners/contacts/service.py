@@ -43,6 +43,32 @@ class ContactService:
         """Cari ara"""
         return self.repo.search(search_text, is_active)
     
+    def count_contacts(self, is_active: bool = True, contact_type: Optional[str] = None) -> int:
+        """Cari sayısını döndür"""
+        return self.repo.count(is_active=is_active, contact_type=contact_type)
+    
+    def generate_contact_code(self, contact_type: str) -> str:
+        """
+        Otomatik cari kodu üret
+        Müşteri: 120.xxxxx, Satıcı: 320.xxxxx
+        """
+        prefix = '120' if contact_type == 'customer' else '320'
+        
+        last_contact = self.db.query(Contact).filter(
+            Contact.code.like(f'{prefix}.%')
+        ).order_by(Contact.code.desc()).first()
+        
+        if last_contact and last_contact.code:
+            try:
+                last_num = int(last_contact.code.split('.')[-1])
+                new_num = last_num + 1
+            except:
+                new_num = 1
+        else:
+            new_num = 1
+        
+        return f'{prefix}.{new_num:05d}'
+    
     def create_contact(self, contact_data: dict) -> Contact:
         """Yeni cari oluştur"""
         # Vergi numarası kontrolü
