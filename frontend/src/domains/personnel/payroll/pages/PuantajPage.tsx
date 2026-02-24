@@ -5,6 +5,8 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import axios from 'axios';
 import dayjs, { Dayjs } from 'dayjs';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const PuantajPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [downloading, setDownloading] = useState(false);
@@ -15,7 +17,7 @@ const PuantajPage: React.FC = () => {
     setDownloading(true);
     try {
       const donem = selectedDate.format('YYYY-MM');
-      const url = `http://localhost:8000/api/v2/personnel/puantaj/template/${donem}`;
+      const url = `${API_BASE}/api/v2/personnel/puantaj/template/${donem}`;
       
       const link = document.createElement('a');
       link.href = url;
@@ -41,7 +43,7 @@ const PuantajPage: React.FC = () => {
 
     try {
       message.loading({ content: 'Test ediliyor...', key: 'test' });
-      const response = await axios.post('http://localhost:8000/api/v2/personnel/puantaj/test-upload', formData);
+      const response = await axios.post(`${API_BASE}/api/v2/personnel/puantaj/test-upload`, formData);
       
       setTestResults(response.data);
       setTestModalVisible(true);

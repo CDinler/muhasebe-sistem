@@ -7,7 +7,7 @@ import type {
   UploadSicilResponse
 } from '../types/monthly-records.types';
 
-const API_BASE_URL = 'http://localhost:8000/api/v2/personnel/monthly-records';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || ''}/api/v2/personnel/monthly-records`;
 
 export const monthlyRecordsApi = {
   /**

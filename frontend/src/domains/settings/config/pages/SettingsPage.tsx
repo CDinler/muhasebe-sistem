@@ -12,6 +12,8 @@ interface EmailSettings {
   use_tls: boolean;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const SettingsPage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ const SettingsPage: React.FC = () => {
   const loadSettings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/api/v2/email/settings', {
+      const response = await axios.get(`${API_BASE}/api/v2/email/settings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -62,7 +64,7 @@ const SettingsPage: React.FC = () => {
       }
       
       await axios.post(
-        'http://127.0.0.1:8000/api/v2/email/settings',
+        `${API_BASE}/api/v2/email/settings`,
         dataToSend,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +92,7 @@ const SettingsPage: React.FC = () => {
       }
       
       await axios.post(
-        'http://127.0.0.1:8000/api/v2/email/test',
+        `${API_BASE}/api/v2/email/test`,
         { recipient_email: smtp_username },
         { headers: { Authorization: `Bearer ${token}` } }
       );

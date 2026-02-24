@@ -6,6 +6,8 @@ import type { ColumnsType } from 'antd/es/table';
 
 const { Option } = Select;
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 interface User {
   id: number;
   username: string;
@@ -48,7 +50,7 @@ const UsersPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/api/v2/users/', {
+      const response = await axios.get(`${API_BASE}/api/v2/users/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
@@ -111,7 +113,7 @@ const UsersPage: React.FC = () => {
         }
         
         await axios.put(
-          `http://127.0.0.1:8000/api/v2/users/${editingUser.id}`,
+          `${API_BASE}/api/v2/users/${editingUser.id}`,
           updateData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -119,7 +121,7 @@ const UsersPage: React.FC = () => {
       } else {
         // Yeni kullanıcı
         await axios.post(
-          'http://127.0.0.1:8000/api/v2/users/',
+          `${API_BASE}/api/v2/users/`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -139,7 +141,7 @@ const UsersPage: React.FC = () => {
   const handleDelete = async (userId: number) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/api/v2/users/${userId}`, {
+      await axios.delete(`${API_BASE}/api/v2/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Kullanıcı devre dışı bırakıldı');

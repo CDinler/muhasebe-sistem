@@ -5,7 +5,7 @@ export const updateEInvoice = async (id: number, data: Partial<EInvoice>): Promi
 };
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000/api/v2/invoicing/einvoices';
+const API_URL = `${import.meta.env.VITE_API_URL || ''}/api/v2/invoicing/einvoices`;
 
 export interface EInvoice {
   id: number;

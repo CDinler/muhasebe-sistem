@@ -11,6 +11,8 @@ import { CariReportModal } from '@/domains/reporting/reports/components/CariRepo
 import { useContactsList, useCreateContact, useUpdateContact, useDeleteContact } from '@/domains/partners/contacts/hooks/useContacts';
 import type { Contact, ContactCreateRequest } from '@/domains/partners/contacts/types/contact.types';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 interface TransactionDetail {
   id: number;
   transaction_number: string;
@@ -123,7 +125,7 @@ const ContactsPage: React.FC = () => {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/v2/partners/contacts/bulk-import', formData, {
+      const response = await axios.post(`${API_BASE}/api/v2/partners/contacts/bulk-import`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -243,7 +245,7 @@ const ContactsPage: React.FC = () => {
       
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://127.0.0.1:8000/api/v2/email/send-report',
+        `${API_BASE}/api/v2/email/send-report`,
         {
           recipient_email: values.recipient_email,
           cc_recipients: values.cc_recipients || null,

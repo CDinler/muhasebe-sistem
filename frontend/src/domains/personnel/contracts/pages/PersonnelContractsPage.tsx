@@ -13,7 +13,7 @@ import apiClient from '@/services/api';
 import dayjs from 'dayjs';
 import DraftContractsTab from '../../draft_contracts/pages/DraftContractsTab';
 
-const API_URL = 'http://localhost:8000/api/v2/personnel';
+const API_URL = `${import.meta.env.VITE_API_URL || ''}/api/v2/personnel`;
 
 interface Period {
   donem: string;

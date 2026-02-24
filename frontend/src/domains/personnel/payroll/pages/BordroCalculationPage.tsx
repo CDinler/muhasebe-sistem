@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v2/personnel';
+const API_URL = `${import.meta.env.VITE_API_URL || ''}/api/v2/personnel`;
 
 interface PayrollRecord {
   // Basic info
