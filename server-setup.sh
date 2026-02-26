@@ -91,15 +91,18 @@ sleep 30
 echo "Veritabanı tabloları oluşturuluyor..."
 docker exec muhasebe-backend python -c "
 from app.core.database import Base, engine
-from app.domains.accounting.accounts.models import Account
-from app.domains.accounting.transactions.models import Transaction, TransactionLine
-from app.domains.partners.contacts.models import Contact
-from app.domains.partners.cost_centers.models import CostCenter
-from app.domains.personnel.models import Personnel, PersonnelContract
+# Tüm modeller import edilmeli (FK bağımlılıkları için)
 from app.domains.users.models import User
 from app.domains.settings.document_types.models import DocumentType
 from app.domains.settings.config.models import SystemConfig, TaxBracket
 from app.domains.settings.tax_codes.models import TaxCode
+from app.domains.partners.contacts.models import Contact
+from app.domains.partners.cost_centers.models import CostCenter
+from app.domains.accounting.accounts.models import Account
+from app.domains.accounting.transactions.models import Transaction, TransactionLine
+from app.domains.personnel.draft_contracts.models import PersonnelDraftContract
+from app.domains.personnel.models import Personnel, PersonnelContract
+from app.domains.personnel.payroll.models import Payroll
 from app.domains.invoicing.einvoices.models import EInvoice
 Base.metadata.create_all(bind=engine)
 print('Tablolar olusturuldu')
