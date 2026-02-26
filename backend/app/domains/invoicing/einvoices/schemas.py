@@ -114,6 +114,12 @@ class EInvoice(EInvoiceBase):
     processing_status: str
     error_message: Optional[str] = None
     raw_data: Optional[Any] = None  # JSON column - XML data as dict
+
+    # Hybrid property'ler (ödeme takibi)
+    paid_amount: Optional[Decimal] = Decimal('0.00')
+    remaining_amount: Optional[Decimal] = Decimal('0.00')
+    payment_status: Optional[str] = 'UNPAID'
+    payment_percentage: Optional[float] = 0.0
     
     @computed_field
     @property
